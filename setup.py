@@ -3,7 +3,7 @@ import os
 
 version = '1.0'
 
-setup(name='pyogp.testharness',
+setup(name='pyogp.interop',
       version=version,
       description="The Open Grid Protocol Test Harness",
       long_description=open("README.txt").read() + "\n" +
