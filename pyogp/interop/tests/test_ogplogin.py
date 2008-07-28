@@ -8,6 +8,7 @@ from pyogp.lib.base.interfaces import IPlaceAvatarAdapter
 from pyogp.lib.base.OGPLogin import OGPLogin
 
 class testAuthOGPLogin(unittest.TestCase):
+
     auth_uri = None
     region_uri = None
 
@@ -15,9 +16,6 @@ class testAuthOGPLogin(unittest.TestCase):
         auth_uri = 'https://login1.aditi.lindenlab.com/cgi-bin/auth.cgi'
         region_uri = 'http://sim1.vaak.lindenlab.com:13000'
 
-    def tearDown(self):
-        # essentially logout by deleting presence... etc.
-        
     def test_base(self):
         credentials = PlainPasswordCredential('firstname', 'lastname', 'password')
         ogpLogin = OGPLogin(credentials, auth_uri, region_uri)
@@ -40,6 +38,10 @@ class testAuthOGPLogin(unittest.TestCase):
             assert False, "Login to banned account should fail"
         except Exception, e:
             pass
+
+    def tearDown(self):
+        # essentially logout by deleting presence... etc.
+	pass
         
 def test_suite():
     from unittest import TestSuite, makeSuite
