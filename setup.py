@@ -25,6 +25,9 @@ setup(name='pyogp.interop',
       install_requires=[
           'setuptools',
           # -*- Extra requirements: -*-
+          'indra.ipc',
+          'indra.base',
+          'pyogp.lib.base'
       ],
       entry_points="""
       # -*- Entry points: -*-

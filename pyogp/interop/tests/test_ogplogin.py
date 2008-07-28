@@ -2,23 +2,25 @@ import unittest, doctest
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
+from pyogp.lib.base.registration import init
 
-from pyogp.lib.base.interfaces import IPlaceAvatarAdapter
+from pyogp.lib.base.interfaces import IPlaceAvatar
 
 from pyogp.lib.base.OGPLogin import OGPLogin
 
-class testAuthOGPLogin(unittest.TestCase):
+class AuthOGPLoginTest(unittest.TestCase):
 
     auth_uri = None
     region_uri = None
 
     def setUp(self):
-        auth_uri = 'https://login1.aditi.lindenlab.com/cgi-bin/auth.cgi'
-        region_uri = 'http://sim1.vaak.lindenlab.com:13000'
+        init() # initialize the framework        
+        self.auth_uri = 'https://login1.aditi.lindenlab.com/cgi-bin/auth.cgi'
+        self.region_uri = 'http://sim1.vaak.lindenlab.com:13000'
 
     def test_base(self):
         credentials = PlainPasswordCredential('firstname', 'lastname', 'password')
-        ogpLogin = OGPLogin(credentials, auth_uri, region_uri)
+        ogpLogin = OGPLogin(credentials, self.auth_uri, self.region_uri)
 
         #gets seedcap, and an agent that can be placed in a region
         agentdomain, agent = ogpLogin.loginToAgentD()
@@ -46,5 +48,5 @@ class testAuthOGPLogin(unittest.TestCase):
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
-    suite.addTest(makeSuite(testBaseOGPLogin))
+    suite.addTest(makeSuite(AuthOGPLoginTest))
     return suite
