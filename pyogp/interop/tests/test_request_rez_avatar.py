@@ -7,7 +7,7 @@ from pyogp.lib.base.network import IRESTClient, StdLibClient, HTTPError
 from zope.component import provideUtility, getUtility
 from pyogp.lib.base.tests.base import AgentDomain
 from pyogp.lib.base.registration import init
-from interfaces import ISerialization
+from pyogp.lib.base.interfaces import ISerialization
 
 class RequestRezAvatarTests(unittest.TestCase):
 
