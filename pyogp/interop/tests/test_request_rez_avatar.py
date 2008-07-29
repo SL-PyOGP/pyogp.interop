@@ -1,29 +1,45 @@
 #!/usr/bin/python
 
 import unittest
-from indra.ipc import llsdhttp
-from indra.base import lluuid
+#from indra.ipc import llsdhttp
+#from indra.base import lluuid
+from pyogp.lib.base.network import IRESTClient, StdLibClient, HTTPError
+from zope.component import provideUtility, getUtility
+from pyogp.lib.base.tests.base import AgentDomain
+from pyogp.lib.base.registration import init
+from interfaces import ISerialization
 
 class RequestRezAvatarTests(unittest.TestCase):
-    agent_id = '3d2b8256-12cd-40fd-abf8-6da4ad6739a2'
-    regionuri = 'http://sim2.vaak.lindenlab.com:12035'
-    #  http://sim2.vaak.lindenlab.com:12035/agent/(uuid)/rez_avatar/request
-    request_rez_avatar_url = regionuri + '/agent/' + agent_id + '/rez_avatar/request'
-    default_arguments={
-        'agent_id' : agent_id,
-        'first_name': 'Leyla',
-        'last_name': 'Tester',
-        'age_verified' : True,
-        'agent_access' : True,
-        'god_level':  200,
-        'identified':  True,
-        'transacted': True,
-        'limited_to_estate': 1,
-        'sim_access' : 'Mature'
-        }
+
+    def setUp(self):
+        init()
+        self.agent_id = '3d2b8256-12cd-40fd-abf8-6da4ad6739a2'
+        self.regionuri = 'http://sim2.vaak.lindenlab.com:12035'
+        #  http://sim2.vaak.lindenlab.com:12035/agent/(uuid)/rez_avatar/request
+        self.request_rez_avatar_url = self.regionuri + '/agent/' + self.agent_id + '/rez_avatar/request'
+        self.default_arguments={
+            'agent_id' : self.agent_id,
+            'first_name': 'Leyla',
+            'last_name': 'Tester',
+            'age_verified' : True,
+            'agent_access' : True,
+            'god_level':  200,
+            'identified':  True,
+            'transacted': True,
+            'limited_to_estate': 1,
+            'sim_access' : 'Mature'
+            }
+        #!?
+        provideUtility(StdLibClient(), IRESTClient)    
+        self.client = getUtility(IRESTClient)
+
+    def tearDown(self):
+        pass
+
     def check_successful_response(self, arguments):
         print "ARGs", arguments
-        result = llsdhttp.post(self.request_rez_avatar_url, arguments)
+        ISerialization(arguments).serialize()
+        result = self.client.POST(self.request_rez_avatar_url, arguments)
         print "RESULT", result
         # check for existence of fields
         self.assert_(result.has_key('connect') and
@@ -44,7 +60,7 @@ class RequestRezAvatarTests(unittest.TestCase):
     def check_failure_response(self, arguments):
         print "ARGs", arguments
         try:
-            result = llsdhttp.post(self.request_rez_avatar_url, arguments)
+            result = self.client.POST(self.request_rez_avatar_url, arguments)
             print "RESULT", result
         except Exception, e:
             # supposed to be error
