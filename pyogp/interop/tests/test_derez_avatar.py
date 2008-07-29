@@ -56,5 +56,9 @@ class DerezAvatarTests(unittest.TestCase):
         self.check_successful_response(default_derez_arguments)
         # Fails with 400 You cannot teleport at this time because no agent
 
-if __name__ == '__main__':
-    unittest.main()
+def test_suite():
+    from unittest import TestSuite, makeSuite
+    suite = TestSuite()
+    suite.addTest(makeSuite(DerezAvatarTests))
+    return suite
+

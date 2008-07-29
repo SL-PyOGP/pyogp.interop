@@ -64,5 +64,9 @@ class RezAvatarTests(unittest.TestCase):
     def test0_default_rez(self):
         self.check_successful_response(default_rez_arguments)
 
-if __name__ == '__main__':
-    unittest.main()
+def test_suite():
+    from unittest import TestSuite, makeSuite
+    suite = TestSuite()
+    suite.addTest(makeSuite(RezAvatarTests))
+    return suite
+

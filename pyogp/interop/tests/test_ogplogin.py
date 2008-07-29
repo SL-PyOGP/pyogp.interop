@@ -19,7 +19,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.region_uri = 'http://sim1.vaak.lindenlab.com:13000'
 
     def test_base(self):
-        credentials = PlainPasswordCredential('firstname', 'lastname', 'password')
+        credentials = PlainPasswordCredential('enusbot198', 'llqabot', 'lindentest')
         ogpLogin = OGPLogin(credentials, self.auth_uri, self.region_uri)
 
         #gets seedcap, and an agent that can be placed in a region
@@ -32,7 +32,7 @@ class AuthOGPLoginTest(unittest.TestCase):
 
     def test_banned(self):
         credentials = PlainPasswordCredential('BannedTester', 'Tester', 'banned_password')
-        ogpLogin = OGPLogin(credentials, auth_uri, region_uri)
+        ogpLogin = OGPLogin(credentials, self.auth_uri, self.region_uri)
 
         #gets seedcap, and an agent that can be placed in a region
         try:
