@@ -19,27 +19,20 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.region_uri = 'http://sim1.vaak.lindenlab.com:13000'
 
     def test_base(self):
-        credentials = PlainPasswordCredential('enusbot198', 'llqabot', 'lindentest')
+        credentials = PlainPasswordCredential('enusbot198', 'llqabot', 'OGPTestingFTW')
         ogpLogin = OGPLogin(credentials, self.auth_uri, self.region_uri)
 
         #gets seedcap, and an agent that can be placed in a region
         agentdomain, agent = ogpLogin.loginToAgentD()
         assert agentdomain.seed_cap != None or agentdomain.seed_cap != {}, "Login to agent domain failed"
 
+        print agent
+
         #attempts to place the agent in a region
         avatar = ogpLogin.placeAvatarCap()
         assert avatar['connect'] == True, "Place avatar failed"
 
-    def test_banned(self):
-        credentials = PlainPasswordCredential('BannedTester', 'Tester', 'banned_password')
-        ogpLogin = OGPLogin(credentials, self.auth_uri, self.region_uri)
-
-        #gets seedcap, and an agent that can be placed in a region
-        try:
-            agentdomain, agent = ogpLogin.loginToAgentD()
-            assert False, "Login to banned account should fail"
-        except Exception, e:
-            pass
+        print avatar
 
     def tearDown(self):
         # essentially logout by deleting presence... etc.
