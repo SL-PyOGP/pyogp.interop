@@ -1,4 +1,6 @@
 import unittest, doctest
+import ConfigParser
+from pkg_resources import resource_stream
 
 import time
 
@@ -19,14 +21,25 @@ class OGPTeleportTest(unittest.TestCase):
 
     def setUp(self):
         init() # initialize the framework        
-        self.auth_uri = 'https://login1.aditi.lindenlab.com/cgi-bin/auth.cgi'
-        self.start_region_uri = 'http://sim1.vaak.lindenlab.com:13000'
-        self.target_region_uri = 'http://sim1.vaak.lindenlab.com:13001'
+
+        # initialize the config
+        config = ConfigParser.ConfigParser()
+        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+
+        # global test attributes
+        self.auth_uri = config.get('test_ogpteleport_setup', 'auth_uri')
+        self.start_region_uri = config.get('test_ogpteleport_setup', 'start_region_uri')
+
+        # test_base_login attributes
+        self.target_region_uri = config.get('test_base_teleport', 'target_region_uri')
+        self.base_firstname = config.get('test_base_teleport', 'firstname')
+        self.base_lastname = config.get('test_base_teleport', 'lastname')
+        self.base_password = config.get('test_base_teleport', 'password')
 
         #todo: grab account info from a local file, the config for is is the only thing ever chcecked in to svn
 
-        def test_base(self):
-        credentials = PlainPasswordCredential(firstname, lastname, password)
+    def test_base_teleport(self):
+        credentials = PlainPasswordCredential(self.base_firstname, self.base_lastname, self.base_password)
         agentdomain = AgentDomain(self.auth_uri)
 
         #gets seedcap, and an agent that can be placed in a region
