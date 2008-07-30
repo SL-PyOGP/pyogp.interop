@@ -1,17 +1,12 @@
 import unittest, doctest
 import ConfigParser
-import os
-import sys
-
 from pkg_resources import resource_stream
 
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
 from pyogp.lib.base.registration import init
-
 from pyogp.lib.base.interfaces import IPlaceAvatar
-
 from pyogp.lib.base.OGPLogin import OGPLogin
 
 class AuthOGPLoginTest(unittest.TestCase):
@@ -24,9 +19,8 @@ class AuthOGPLoginTest(unittest.TestCase):
 
         # initialize the config
         config = ConfigParser.ConfigParser()
-        configfile = os.path.join(os.path.dirname(__file__), 'testconfig.cfg')
-        config.read(configfile)
-        
+        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+       
         # global test attributes
         self.auth_uri = config.get('test_ogplogin_setup', 'auth_uri')
         self.region_uri = config.get('test_ogplogin_setup', 'region_uri')
