@@ -37,10 +37,14 @@ class RequestRezAvatarTests(unittest.TestCase):
         pass
 
     def check_successful_response(self, arguments):
-        print "ARGs", arguments
+        #print "ARGs", arguments
         ISerialization(arguments).serialize()
-        result = self.client.POST(self.request_rez_avatar_url, arguments)
-        print "RESULT", result
+        try:
+            result = self.client.POST(self.request_rez_avatar_url, arguments)
+        except Exception, e:
+            print 'Exception: ' + e.message + ' ' + str(e.args)
+            return
+        #print "RESULT", result
         # check for existence of fields
         self.assert_(result.has_key('connect') and
                      result.has_key('rez_avatar/rez') and
@@ -58,18 +62,20 @@ class RequestRezAvatarTests(unittest.TestCase):
         self.assert_(isUUID(result['region_id']))
 
     def check_failure_response(self, arguments):
-        print "ARGs", arguments
+        #print "ARGs", arguments
         try:
+            ISerialization(arguments).serialize()
             result = self.client.POST(self.request_rez_avatar_url, arguments)
-            print "RESULT", result
+            #print "RESULT", result
         except Exception, e:
-            # supposed to be error
+            print 'Exception: ' + e.message + ' ' + str(e.args)
             return
 
         self.assertEquals(result['connect'], False)
 
     def test0_simple(self):
-        self.check_successful_response(self.default_arguments)
+        args = self.default_arguments
+        self.check_successful_response(args)
 
     def test1_unverified(self):
         """ Unverified agents should not be allowed """
