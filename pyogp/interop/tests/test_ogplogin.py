@@ -18,8 +18,10 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.auth_uri = 'https://login1.aditi.lindenlab.com/cgi-bin/auth.cgi'
         self.region_uri = 'http://sim1.vaak.lindenlab.com:13000'
 
+        #todo: grab account info from a local file, the config for is is the only thing ever chcecked in to svn
+
     def test_base(self):
-        credentials = PlainPasswordCredential('enus', 'linden', '42boys')
+        credentials = PlainPasswordCredential(firstname, lastname, password)
         agentdomain = AgentDomain(self.auth_uri)
 
         #gets seedcap, and an agent that can be placed in a region

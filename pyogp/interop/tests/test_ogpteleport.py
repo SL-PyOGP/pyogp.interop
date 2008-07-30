@@ -23,8 +23,10 @@ class OGPTeleportTest(unittest.TestCase):
         self.start_region_uri = 'http://sim1.vaak.lindenlab.com:13000'
         self.target_region_uri = 'http://sim1.vaak.lindenlab.com:13001'
 
-    def test_base(self):
-        credentials = PlainPasswordCredential('enus', 'linden', '42boys')
+        #todo: grab account info from a local file, the config for is is the only thing ever chcecked in to svn
+
+        def test_base(self):
+        credentials = PlainPasswordCredential(firstname, lastname, password)
         agentdomain = AgentDomain(self.auth_uri)
 
         #gets seedcap, and an agent that can be placed in a region
