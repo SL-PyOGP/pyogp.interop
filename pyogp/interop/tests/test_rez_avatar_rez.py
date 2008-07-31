@@ -1,37 +1,42 @@
 #!/usr/bin/python
 
 import unittest
+import ConfigParser
+from pkg_resources import resource_stream
+
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
-
-
-## Globals to share with other tests
-agent_id = '3d2b8256-12cd-40fd-abf8-6da4ad6739a2'
-dest_regionuri = 'http://sim2.vaak.lindenlab.com:12035'
-#  http://sim2.vaak.lindenlab.com:12035/agent/(uuid)/rez_avatar/rez
-rez_avatar_url = dest_regionuri + '/agent/' + agent_id + '/rez_avatar/rez?agent_id=' + agent_id + '&allow_redirect=true&god_level=200&god_override&identified=&limited_to_estate=1&transacted='
-
-default_rez_arguments={
-    'circuit_code': 274880050,
-    'god_overide': False,
-    'position': [128, 128, 128],
-    'secure_session_id': '4cf1176e-457c-11dd-8b4c-0050455c6ada',
-    'session_id': '4cf1124f-457c-11dd-b037-0050455c6ada',
-    'inventory_host': 'inv4.mysql.agni.lindenlab.com', # not really here!
-    'voice_password': None,
-    
-    # The following are only sent from simulator a -> simulator b via derez_avatar
-    'attachment_data': None, # [ {'attachment_point':<int>, 'item_id':<uuid>, 'asset_id':<uuid> | 'asset_data':<binary>}...]
-    'baked_texture_data': None, #[ {'texture_id':<uuid>, 'asset_host_name':<host?????>}...]
-    'texture_data': None, # [ <uuid>...]
-    'animations': None #[{'state':<uuid>, 'source':<uuid>, 'sequence':<int>}...]
-    }
 
 class RezAvatarRezTests(unittest.TestCase):
 
     def setUp(self):
         init()
-        self.default_arguments = default_rez_arguments
+        
+        config = ConfigParser.ConfigParser()
+        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        
+        # grab the testdata from testconfig.cfg
+        self.agent_id = config.get('test_rez_avatar_rez_setup', 'agent_id')
+        self.region_uri = config.get('test_rez_avatar_rez_setup', 'region_id')
+        self.position = [config.getint('test_rez_avatar_rez_setup', 'position_x'), config.getint('test_rez_avatar_rez_setup', 'position_y'), config.getint('test_rez_avatar_rez_setup', 'position_z')]
+        
+        # rez_avatar_url = dest_regionuri + '/agent/' + agent_id + '/rez_avatar/rez?agent_id=' + agent_id + '&allow_redirect=true&god_level=200&god_override&identified=&limited_to_estate=1&transacted='
+        self.rez_avatar_url  = self.region_uri + '/agent' + self.agent_id + 'rez_avatar/rez'
+         
+        self.default_arguments = { 
+			'circuit_code' : config.getint('test_rez_avatar_rez_setup', 'circuit_code'),
+			'god_overide' : config.getboolean('test_rez_avatar_rez_setup', 'god_overide'),
+			'position' : self.position'),
+			'secure_session_id' : config.get('test_rez_avatar_rez_setup', 'secure_session_id'),
+			'session_id' : config.get('test_rez_avatar_rez_setup', 'session_id'),
+			'inventory_host' : config.get('test_rez_avatar_rez_setup', 'inventory_host'), # not really here!
+			'voice_password' : None,    
+			# The following are only sent from simulator a -> simulator b via derez_avatar
+			'attachment_data' : None, 
+			'baked_texture_data' : None, 
+			'texture_data' : None, 
+			'animations' : None 
+               
         self.capability = Capability('rez_avatar/rez', rez_avatar_url)
 
     def tearDown(self):
@@ -72,6 +77,17 @@ class RezAvatarRezTests(unittest.TestCase):
         self.assert_(result['position'][0] < 256 and
                      result['position'][1] < 256 and 
                      result['position'][2] < 256)
+                     
+    def test_rez_avatar_rez_look_at(self):
+        """ verify look_at values are within range """
+
+        result = self.postToCap(self.default_arguments)
+
+        self.check_response_base(result)
+        
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
 
 def test_suite():
     from unittest import TestSuite, makeSuite

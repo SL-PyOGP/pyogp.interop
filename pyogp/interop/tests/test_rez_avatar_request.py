@@ -1,39 +1,39 @@
 #!/usr/bin/python
 
 import unittest
-#from indra.ipc import llsdhttp
-# from indra.base import lluuid
-# from pyogp.lib.base.network import IRESTClient, StdLibClient, HTTPError
-# from zope.component import provideUtility, getUtility
-# from pyogp.lib.base.tests.base import AgentDomain
+import ConfigParser
+from pkg_resources import resource_stream
+
 from pyogp.lib.base.registration import init
-# from pyogp.lib.base.interfaces import ISerialization, IDeserialization
 from pyogp.lib.base.caps import Capability
 
 class RezAvatarRequestTests(unittest.TestCase):
 
     def setUp(self):
         init()
-        self.agent_id = '3d2b8256-12cd-40fd-abf8-6da4ad6739a2'
-        self.regionuri = 'http://sim1.vaak.lindenlab.com:13000'
-        #  http://sim2.vaak.lindenlab.com:12035/agent/(uuid)/rez_avatar/request
-        self.request_rez_avatar_url = self.regionuri + '/agent/' + self.agent_id + '/rez_avatar/request'
+
+        config = ConfigParser.ConfigParser()
+        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        
+        # grab the testdata from testconfig.cfg
+        self.agent_id = config.get('test_rez_avatar_request_setup', 'agent_id')
+        self.region_uri = config.get('test_rez_avatar_request_setup', 'region_uri')
+        self.rez_request_avatar_url = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/request'
+        
         self.default_arguments={
             'agent_id' : self.agent_id,
-            'first_name': 'Leyla',
-            'last_name': 'Tester',
-            'age_verified' : True,
-            'agent_access' : True,
-            'god_level':  200,
-            'identified':  True,
-            'transacted': True,
-            'limited_to_estate': 1,
-            'sim_access' : 'Mature'
+            'first_name' : config.get('test_rez_avatar_request_setup', 'first_name'),
+            'last_name' : config.get('test_rez_avatar_request_setup', 'last_name'),
+            'age_verified' : config.getboolean('test_rez_avatar_request_setup', 'age_verified'),
+            'agent_access' : config.getboolean('test_rez_avatar_request_setup', 'agent_access'),
+            'god_level' :  config.getint('test_rez_avatar_request_setup', 'god_level'),
+            'identified' :  config.getboolean('test_rez_avatar_request_setup', 'identified'),
+            'transacted' : config.getboolean('test_rez_avatar_request_setup', 'transacted'),
+            'limited_to_estate' : config.getint('test_rez_avatar_request_setup', 'limited_to_estate'),
+            'sim_access' : config.get('test_rez_avatar_request_setup', 'sim_access'),
             }
-        #!?
-        # provideUtility(StdLibClient(), IRESTClient)    
-        # self.client = getUtility(IRESTClient)
-        self.capability = Capability('rez_avatar/request', self.request_rez_avatar_url)
+
+        self.capability = Capability('rez_avatar/request', self.rez_request_avatar_url)
 
     def tearDown(self):
         pass
