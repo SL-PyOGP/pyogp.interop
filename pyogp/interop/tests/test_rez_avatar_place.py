@@ -7,6 +7,8 @@ from pkg_resources import resource_stream
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
 
+from helpers import Agent
+
 class RezAvatarPlaceTests(unittest.TestCase):
 
     def setUp(self):
@@ -15,25 +17,34 @@ class RezAvatarPlaceTests(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
+        self.firstname = config.get('test_rez_avatar_place_setup', 'firstname')
+        self.lastname = config.get('test_rez_avatar_place_setup', 'lastname')
+        self.password = config.get('test_rez_avatar_place_setup', 'password')
+        self.login_uri = config.get('test_rez_avatar_place_setup', 'login_uri')
         self.region_uri = config.get('test_rez_avatar_place_setup', 'region_uri')
         self.position = config.get('test_rez_avatar_place_setup', 'position')
         
         self.default_arguments = {
-            'rez_avatar' : self.rez_avatar_url,
+            'region_url' : self.region_uri,
             'position' : self.position
             }
 
         # to get place, we need to authenticate and retrieve the place_avatar cap from the AD
-
-               
-        self.capability = Capability('rez_avatar/place', self.rez_avatar_url)
-
+        client = Agent()
+        client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        self.caps = client.agentdomain.seed_cap.get(['rez_avatar/place'])
+        
+        # initialize the cap object for use in postToCap
+        self.capability = Capability('rez_avatar/place', self.caps['rez_avatar/place'].public_url)
+       
     def tearDown(self):
         pass
     
     def postToCap(self, arguments):
+        print arguments
         try:
             result = self.capability.POST(arguments)
+            print result
         except Exception, e:
             print 'Exception: ' + e.message + ' ' + str(e.args)
             return
