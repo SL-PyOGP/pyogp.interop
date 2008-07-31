@@ -24,12 +24,12 @@ class RezAvatarRequestTests(unittest.TestCase):
             'agent_id' : self.agent_id,
             'first_name' : config.get('test_rez_avatar_request_setup', 'first_name'),
             'last_name' : config.get('test_rez_avatar_request_setup', 'last_name'),
-            'age_verified' : config.getboolean('test_rez_avatar_request_setup', 'age_verified'),
-            'agent_access' : config.getboolean('test_rez_avatar_request_setup', 'agent_access'),
-            'god_level' :  config.getint('test_rez_avatar_request_setup', 'god_level'),
-            'identified' :  config.getboolean('test_rez_avatar_request_setup', 'identified'),
-            'transacted' : config.getboolean('test_rez_avatar_request_setup', 'transacted'),
-            'limited_to_estate' : config.getint('test_rez_avatar_request_setup', 'limited_to_estate'),
+            'age_verified' : config.get('test_rez_avatar_request_setup', 'age_verified'),
+            'agent_access' : config.get('test_rez_avatar_request_setup', 'agent_access'),
+            'god_level' :  config.get('test_rez_avatar_request_setup', 'god_level'),
+            'identified' :  config.get('test_rez_avatar_request_setup', 'identified'),
+            'transacted' : config.get('test_rez_avatar_request_setup', 'transacted'),
+            'limited_to_estate' : config.get('test_rez_avatar_request_setup', 'limited_to_estate'),
             'sim_access' : config.get('test_rez_avatar_request_setup', 'sim_access'),
             }
 

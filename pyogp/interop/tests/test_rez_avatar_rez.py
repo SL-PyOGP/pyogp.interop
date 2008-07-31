@@ -17,16 +17,15 @@ class RezAvatarRezTests(unittest.TestCase):
         
         # grab the testdata from testconfig.cfg
         self.agent_id = config.get('test_rez_avatar_rez_setup', 'agent_id')
-        self.region_uri = config.get('test_rez_avatar_rez_setup', 'region_id')
-        self.position = [config.getint('test_rez_avatar_rez_setup', 'position_x'), config.getint('test_rez_avatar_rez_setup', 'position_y'), config.getint('test_rez_avatar_rez_setup', 'position_z')]
-        
+        self.region_uri = config.get('test_rez_avatar_rez_setup', 'region_uri')
+        self.position = config.get('test_rez_avatar_rez_setup', 'position')        
         # rez_avatar_url = dest_regionuri + '/agent/' + agent_id + '/rez_avatar/rez?agent_id=' + agent_id + '&allow_redirect=true&god_level=200&god_override&identified=&limited_to_estate=1&transacted='
         self.rez_avatar_url  = self.region_uri + '/agent' + self.agent_id + 'rez_avatar/rez'
          
         self.default_arguments = { 
-			'circuit_code' : config.getint('test_rez_avatar_rez_setup', 'circuit_code'),
-			'god_overide' : config.getboolean('test_rez_avatar_rez_setup', 'god_overide'),
-			'position' : self.position'),
+			'circuit_code' : config.get('test_rez_avatar_rez_setup', 'circuit_code'),
+			'god_override' : config.get('test_rez_avatar_rez_setup', 'god_override'),
+			'position' : self.position,
 			'secure_session_id' : config.get('test_rez_avatar_rez_setup', 'secure_session_id'),
 			'session_id' : config.get('test_rez_avatar_rez_setup', 'session_id'),
 			'inventory_host' : config.get('test_rez_avatar_rez_setup', 'inventory_host'), # not really here!
@@ -35,9 +34,10 @@ class RezAvatarRezTests(unittest.TestCase):
 			'attachment_data' : None, 
 			'baked_texture_data' : None, 
 			'texture_data' : None, 
-			'animations' : None 
+			'animations' : None
+            }
                
-        self.capability = Capability('rez_avatar/rez', rez_avatar_url)
+        self.capability = Capability('rez_avatar/rez', self.rez_avatar_url)
 
     def tearDown(self):
         pass
