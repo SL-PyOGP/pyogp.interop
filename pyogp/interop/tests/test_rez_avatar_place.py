@@ -7,7 +7,7 @@ from pkg_resources import resource_stream
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
 
-class RezAvatarRezTests(unittest.TestCase):
+class RezAvatarPlaceTests(unittest.TestCase):
 
     def setUp(self):
         init()
@@ -78,31 +78,9 @@ class RezAvatarRezTests(unittest.TestCase):
         self.check_response_base(result)
         self.assertEquals(result['connect'], True)
 
-    def test_rez_avatar_rez_position(self):
-        """ verify position values are within range """
-
-        result = self.postToCap(self.default_arguments)
-
-        self.check_response_base(result)
-        
-        self.assert_(result['position'][0] < 256 and
-                     result['position'][1] < 256 and 
-                     result['position'][2] < 256)
-                     
-    def test_rez_avatar_rez_look_at(self):
-        """ verify look_at values are within range """
-
-        result = self.postToCap(self.default_arguments)
-
-        self.check_response_base(result)
-        
-        self.assert_(result['look_at'][0] < 256 and
-                     result['look_at'][1] < 256 and 
-                     result['look_at'][2] < 256)
-
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
-    suite.addTest(makeSuite(RezAvatarRezTests))
+    suite.addTest(makeSuite(RezAvatarPlaceTests))
     return suite
 
