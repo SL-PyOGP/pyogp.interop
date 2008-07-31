@@ -22,8 +22,11 @@ class RezAvatarPlaceTests(unittest.TestCase):
             'rez_avatar' : self.rez_avatar_url,
             'position' : self.position
             }
+
+        # to get place, we need to authenticate and retrieve the place_avatar cap from the AD
+
                
-        self.capability = Capability('rez_avatar/rez', self.rez_avatar_url)
+        self.capability = Capability('rez_avatar/place', self.rez_avatar_url)
 
     def tearDown(self):
         pass

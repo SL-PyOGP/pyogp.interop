@@ -72,27 +72,26 @@ class RezAvatarRequestTests(unittest.TestCase):
         """ region_x is less than 256 """
         result = self.postToCap(self.default_arguments)
         
-        self.check_successful_response(result)
+        self.check_response_base(result)
         self.assert_(result['region_x'] < 256)
 
     def test_rez_avatar_request_region_y(self):
         """ region_y is less than 256 """
         result = self.postToCap(self.default_arguments)
 
-        self.check_successful_response(result)
+        self.check_response_base(result)
         self.assert_(result['region_y'] < 256)
-
+    
+    """
     def test_rez_avatar_request_region_id_UUID(self):
-        """ region_id is a UUID """
+        ***  region_id is a UUID *** 
         
         #ToDo: find/implement a helper funtion for isUUID
-        return
-        """
         result = self.postToCap(self.default_arguments)
 
         self.check_successful_response(result)
         self.assert_(isUUID(result['region_id']))
-        """                        
+     """                        
 
     def test_rez_avatar_request_unverified(self):
         """ Unverified agents should not be allowed """

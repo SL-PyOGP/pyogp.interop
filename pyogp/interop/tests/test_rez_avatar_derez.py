@@ -24,10 +24,10 @@ class RezAvatarDerezTest(unittest.TestCase):
         self.derez_avatar_url = self.source_region_uri + '/agent/' + self.agent_id + '/rez_avatar/derez'
         self.position = config.get('test_rez_avatar_derez_setup', 'position')                
         self.default_arguments = {
-        	'rez_avatar' : self.rez_avatar_url,
-        	'position' : self.position
-        	}
-        		
+            'rez_avatar' : self.rez_avatar_url,
+            'position' : self.position
+            }
+        
         self.capability = Capability('rez_avatar/derez', self.derez_avatar_url)
 
     def tearDown(self):
@@ -35,18 +35,21 @@ class RezAvatarDerezTest(unittest.TestCase):
 
 
     def postToCap(self, arguments):
+      
         try:
             result = self.capability.POST(arguments)
         except Exception, e:
             print 'Exception: ' + e.message + ' ' + str(e.args)
+            result = {}
             return
-
+       
         return result
 
 
     def check_response_base(self, results):
         """ check the the existence of the correct parameters in the cap response """
-        
+       
+        print result['postition']
         self.assert_(result.has_key('connect') and
                      result.has_key('look_at') and
                      result.has_key('position'))

@@ -15,7 +15,7 @@ from pyogp.lib.base.OGPLogin import OGPLogin
 
 class OGPTeleportTest(unittest.TestCase):
 
-    auth_uri = None
+    login_uri = None
     start_region_uri = None
     target_region_uri = None
 
@@ -27,7 +27,7 @@ class OGPTeleportTest(unittest.TestCase):
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
 
         # global test attributes
-        self.auth_uri = config.get('test_ogpteleport_setup', 'auth_uri')
+        self.login_uri = config.get('test_ogpteleport_setup', 'login_uri')
         self.start_region_uri = config.get('test_ogpteleport_setup', 'start_region_uri')
 
         # test_base_login attributes
@@ -40,7 +40,7 @@ class OGPTeleportTest(unittest.TestCase):
 
     def test_base_teleport(self):
         credentials = PlainPasswordCredential(self.base_firstname, self.base_lastname, self.base_password)
-        agentdomain = AgentDomain(self.auth_uri)
+        agentdomain = AgentDomain(self.login_uri)
 
         #gets seedcap, and an agent that can be placed in a region
         agent = agentdomain.login(credentials)

@@ -11,7 +11,7 @@ from pyogp.lib.base.OGPLogin import OGPLogin
 
 class AuthOGPLoginTest(unittest.TestCase):
 
-    auth_uri = None
+    login_uri = None
     region_uri = None
 
     def setUp(self):
@@ -22,7 +22,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
        
         # global test attributes
-        self.auth_uri = config.get('test_ogplogin_setup', 'auth_uri')
+        self.login_uri = config.get('test_ogplogin_setup', 'login_uri')
         self.region_uri = config.get('test_ogplogin_setup', 'region_uri')
         
         # test_base_login attributes
@@ -34,7 +34,7 @@ class AuthOGPLoginTest(unittest.TestCase):
 
     def test_base_login(self):
         credentials = PlainPasswordCredential(self.base_firstname, self.base_lastname, self.base_password)
-        agentdomain = AgentDomain(self.auth_uri)
+        agentdomain = AgentDomain(self.login_uri)
 
         #gets seedcap, and an agent that can be placed in a region
         agent = agentdomain.login(credentials)

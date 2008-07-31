@@ -20,23 +20,23 @@ class RezAvatarRezTests(unittest.TestCase):
         self.region_uri = config.get('test_rez_avatar_rez_setup', 'region_uri')
         self.position = config.get('test_rez_avatar_rez_setup', 'position')        
         # rez_avatar_url = dest_regionuri + '/agent/' + agent_id + '/rez_avatar/rez?agent_id=' + agent_id + '&allow_redirect=true&god_level=200&god_override&identified=&limited_to_estate=1&transacted='
-        self.rez_avatar_url  = self.region_uri + '/agent' + self.agent_id + 'rez_avatar/rez'
+        self.rez_avatar_url  = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
          
         self.default_arguments = { 
-			'circuit_code' : config.get('test_rez_avatar_rez_setup', 'circuit_code'),
-			'god_override' : config.get('test_rez_avatar_rez_setup', 'god_override'),
-			'position' : self.position,
-			'secure_session_id' : config.get('test_rez_avatar_rez_setup', 'secure_session_id'),
-			'session_id' : config.get('test_rez_avatar_rez_setup', 'session_id'),
-			'inventory_host' : config.get('test_rez_avatar_rez_setup', 'inventory_host'), # not really here!
-			'voice_password' : None,    
-			# The following are only sent from simulator a -> simulator b via derez_avatar
-			'attachment_data' : None, 
-			'baked_texture_data' : None, 
-			'texture_data' : None, 
-			'animations' : None
+           'circuit_code' : config.get('test_rez_avatar_rez_setup', 'circuit_code'),
+           'god_override' : config.get('test_rez_avatar_rez_setup', 'god_override'),
+           'position' : self.position,
+           'secure_session_id' : config.get('test_rez_avatar_rez_setup', 'secure_session_id'),
+           'session_id' : config.get('test_rez_avatar_rez_setup', 'session_id'),
+           'inventory_host' : config.get('test_rez_avatar_rez_setup', 'inventory_host'), # not really here!
+           'voice_password' : None,    
+           # The following are only sent from simulator a -> simulator b via derez_avatar
+           'attachment_data' : None, 
+           'baked_texture_data' : None, 
+           'texture_data' : None, 
+           'animations' : None
             }
-               
+        
         self.capability = Capability('rez_avatar/rez', self.rez_avatar_url)
 
     def tearDown(self):
@@ -48,7 +48,6 @@ class RezAvatarRezTests(unittest.TestCase):
         except Exception, e:
             print 'Exception: ' + e.message + ' ' + str(e.args)
             return
-
         return result
 
     
