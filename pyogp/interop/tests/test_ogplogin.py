@@ -31,12 +31,9 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.client = Agent()
 
     def tearDown(self):
-        
-        # self.client.logout()
-        '''
-        if self.client.agentdomain != None:
+       
+        if False: # need a flag in the lib for when an agent has logged in 
             self.client.logout()
-        '''
         
     def test_base_login(self):
         """ login with an account which should just work """
@@ -88,7 +85,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         # this is the AD seed cap
         assert response['location'] != None
         '''
-        
+        print response
         assert response != None
         
     def test_auth_unknown_account(self):
@@ -109,12 +106,16 @@ class AuthOGPLoginTest(unittest.TestCase):
         assert response['message'] == 'Agent does not exist'
         
     # Other tests to write:
+
     # test_auth_(good account with bad password)
     # test_auth_banned_account
     # test_auth_(new account that hasn't accepted ToS etc yet)
     # Infinity's tests will likely cover much of this
-        
-        
+    # test invalid inputs: variations of no firstname, lastname, password/md5password
+    # test including additional parameters
+    # test bad region uri
+    # etc
+    
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()

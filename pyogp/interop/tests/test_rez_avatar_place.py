@@ -46,7 +46,6 @@ class RezAvatarPlaceTests(unittest.TestCase):
         '''
         
     def postToCap(self, arguments):
-        print arguments
         try:
             result = self.capability.POST(arguments)
             print result
