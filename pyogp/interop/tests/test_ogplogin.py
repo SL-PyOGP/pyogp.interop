@@ -20,32 +20,34 @@ class AuthOGPLoginTest(unittest.TestCase):
         init() # initialize the framework        
 
         # initialize the config
-        config = ConfigParser.ConfigParser()
-        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        self.config = ConfigParser.ConfigParser()
+        self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
        
         # global test attributes
-        self.login_uri = config.get('test_ogplogin_setup', 'login_uri')
-        self.region_uri = config.get('test_ogplogin_setup', 'region_uri')
-        
-        # test_base_login attributes
-        self.firstname = config.get('test_base_login', 'firstname')
-        self.lastname = config.get('test_base_login', 'lastname')
-        self.password = config.get('test_base_login', 'password')
+        self.login_uri = self.config.get('test_ogplogin_setup', 'login_uri')
+        self.region_uri = self.config.get('test_ogplogin_setup', 'region_uri')
 
         #todo: grab account info from a local file, the config for is is the only thing ever chcecked in to svn
         self.client = Agent()
 
     def tearDown(self):
         
-        self.client.logout()
+        # self.client.logout()
         '''
         if self.client.agentdomain != None:
             self.client.logout()
         '''
         
     def test_base_login(self):
+        """ login with an account which should just work """
+        # in the case the of the OGP Beta, memdership in the gridnauts group is required
+        
+        # test_base_login attributes
+        firstname = self.config.get('test_base_login', 'firstname')
+        lastname = self.config.get('test_base_login', 'lastname')
+        password = self.config.get('test_base_login', 'password')
  
-        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        self.client.authenticate(firstname, lastname, password, self.login_uri)
 
         #gets seedcap, and an agent that can be placed in a region
         assert self.client.agentdomain.seed_cap.public_url != None or self.client.agentdomain.seed_cap.public_url != {}, "Login to agent domain failed"
@@ -66,6 +68,51 @@ class AuthOGPLoginTest(unittest.TestCase):
         assert self.client.avatar.region.details['session_id'] != None or self.client.avatar.region.details['session_id'] != {}, "Rez_avatar/place returned no session_id"
         assert self.client.avatar.region.details['secure_session_id'] != None or self.client.avatar.region.details['secure_session_id'] != {}, "Rez_avatar/place returned no secure_session_id"
         assert self.client.avatar.region.details['circuit_code'] != None or self.client.avatar.region.details['circuit_code'] != {}, "Rez_avatar/place returned no cicuit_code"
+
+    def test_auth_base_account(self):
+        """ auth with an account which should just work """
+        
+        # test_base_login attributes
+        firstname = self.config.get('test_auth_base_account', 'firstname')
+        lastname = self.config.get('test_auth_base_account', 'lastname')
+        password = self.config.get('test_auth_base_account', 'password')    
+    
+        response = self.client.postToLoginUri(firstname, lastname, password, self.login_uri)
+        
+        # once the redirect is gone, this is the appropriate test
+        '''
+        assert (response.has_key('authenticated') and
+                response.has_key('location'))
+        
+        assert response['authenticated'] == True
+        # this is the AD seed cap
+        assert response['location'] != None
+        '''
+        
+        assert response != None
+        
+    def test_auth_unknown_account(self):
+        """ auth with an account which should just never work """
+        
+        # test_base_login attributes
+        firstname = self.config.get('test_auth_unknown_account', 'firstname')
+        lastname = self.config.get('test_auth_unknown_account', 'lastname')
+        password = self.config.get('test_auth_unknown_account', 'password')    
+    
+        response = self.client.postToLoginUri(firstname, lastname, password, self.login_uri)
+        
+        assert (response.has_key('authenticated') and
+                response.has_key('reason') and
+                response.has_key('message'))
+        
+        assert response['authenticated'] == False
+        assert response['message'] == 'Agent does not exist'
+        
+    # Other tests to write:
+    # test_auth_(good account with bad password)
+    # test_auth_banned_account
+    # test_auth_(new account that hasn't accepted ToS etc yet)
+    # Infinity's tests will likely cover much of this
         
         
 def test_suite():
