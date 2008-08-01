@@ -30,16 +30,21 @@ class RezAvatarPlaceTests(unittest.TestCase):
             }
 
         # to get place, we need to authenticate and retrieve the place_avatar cap from the AD
-        client = Agent()
-        client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
-        self.caps = client.agentdomain.seed_cap.get(['rez_avatar/place'])
+        self.client = Agent()
+        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        self.caps = self.client.agentdomain.seed_cap.get(['rez_avatar/place'])
         
         # initialize the cap object for use in postToCap
         self.capability = Capability('rez_avatar/place', self.caps['rez_avatar/place'].public_url)
        
     def tearDown(self):
-        pass
-    
+        
+        self.client.logout()
+        '''
+        if self.client.agentdomain != None:
+            self.client.logout()
+        '''
+        
     def postToCap(self, arguments):
         print arguments
         try:

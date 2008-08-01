@@ -49,7 +49,7 @@ class RezAvatarDerezTest(unittest.TestCase):
     def check_response_base(self, results):
         """ check the the existence of the correct parameters in the cap response """
        
-        print result['postition']
+        print result['position']
         self.assert_(result.has_key('connect') and
                      result.has_key('look_at') and
                      result.has_key('position'))

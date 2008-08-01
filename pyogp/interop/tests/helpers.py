@@ -1,3 +1,5 @@
+import time
+
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
@@ -39,8 +41,6 @@ class Agent():
         # rez on a sim
         self.rezOnSim(self.region_uri)
        
-        print self.region.details
-
     def authenticate(self, firstname, lastname, password, login_uri):
         """ authenticate against an agent domain """
         
@@ -56,12 +56,16 @@ class Agent():
         caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
 
         # try and connect to a sim
-        self.region = Region(self.region_uri)
+        self.region = Region(region_uri)
         place = IPlaceAvatar(self.agentdomain)
 
         self.avatar  = place(self.region)
 
         # print dir(self.region)
   
-      
+    def logout(self):
+        """ logs the agent out of the grid """
 
+        # currently, we don't disconnect from the sim, b/c we never really connect there, so let's just sleep for a mo or 10 so the AD timesout
+        # another way to go about it would be to call derez 
+        time.sleep(90)
