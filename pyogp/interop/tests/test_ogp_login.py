@@ -27,7 +27,6 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.login_uri = self.config.get('test_ogplogin_setup', 'login_uri')
         self.region_uri = self.config.get('test_ogplogin_setup', 'region_uri')
 
-        #todo: grab account info from a local file, the config for is is the only thing ever chcecked in to svn
         self.client = Agent()
 
     def tearDown(self):

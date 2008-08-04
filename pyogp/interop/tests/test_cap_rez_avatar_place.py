@@ -10,7 +10,8 @@ from pyogp.lib.base.caps import Capability
 from helpers import Agent
 
 class RezAvatarPlaceTests(unittest.TestCase):
-
+    """ test posting to rez_avatar/place for a simulator, acting as the region domain """
+    
     def setUp(self):
         init()
         

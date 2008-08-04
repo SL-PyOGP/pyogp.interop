@@ -8,7 +8,8 @@ from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
 
 class RezAvatarRezTests(unittest.TestCase):
-
+    """ test posting to rez_avatar/rez for a simulator, acting as the region domain """
+    
     def setUp(self):
         init()
         
@@ -19,7 +20,6 @@ class RezAvatarRezTests(unittest.TestCase):
         self.agent_id = config.get('test_rez_avatar_rez_setup', 'agent_id')
         self.region_uri = config.get('test_rez_avatar_rez_setup', 'region_uri')
         self.position = config.get('test_rez_avatar_rez_setup', 'position')        
-        # rez_avatar_url = dest_regionuri + '/agent/' + agent_id + '/rez_avatar/rez?agent_id=' + agent_id + '&allow_redirect=true&god_level=200&god_override&identified=&limited_to_estate=1&transacted='
         self.rez_avatar_url  = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
          
         self.default_arguments = { 

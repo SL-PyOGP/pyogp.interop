@@ -9,6 +9,7 @@ from pyogp.lib.base.caps import Capability
 
 
 class RezAvatarDerezTest(unittest.TestCase):
+    """ test posting to rez_avatar/derez for a simulator, acting as the region domain """
 
     def setUp(self):
         init()

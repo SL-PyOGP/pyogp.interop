@@ -61,7 +61,7 @@ class testCapRegionInfo(unittest.TestCase):
 
     '''
 
-    write tests against agent/info, an agent domain cap
+    write tests against region/info, a region domain cap
     http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Region_Information_.28Resource_Class.29
 
     '''

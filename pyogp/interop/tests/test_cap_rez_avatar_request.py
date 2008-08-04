@@ -7,33 +7,46 @@ from pkg_resources import resource_stream
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
 
-class RezAvatarRequestTests(unittest.TestCase):
+from helpers import Agent
 
+class RezAvatarRequestTests(unittest.TestCase):
+    """ test posting to rez_avatar/request for a simulator, acting as the region domain """
+    
     def setUp(self):
         init()
 
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        # grab the testdata from testconfig.cfg
-        self.agent_id = config.get('test_rez_avatar_request_setup', 'agent_id')
-        self.region_uri = config.get('test_rez_avatar_request_setup', 'region_uri')
-        self.rez_request_avatar_url = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/request'
+        test_setup_config_name = 'test_rez_avatar_request_setup'
         
+        # grab the testdata from testconfig.cfg
+        self.agent_id = config.get(test_setup_config_name, 'agent_id')
+        self.region_uri = config.get(test_setup_config_name, 'region_uri')
+        self.firstname = config.get(test_setup_config_name, 'firstname')
+        self.lastname = config.get(test_setup_config_name, 'lastname')
+        self.password = config.get(test_setup_config_name, 'password')
+        self.login_uri = config.get(test_setup_config_name, 'login_uri')
+                
         self.default_arguments={
             'agent_id' : self.agent_id,
-            'first_name' : config.get('test_rez_avatar_request_setup', 'first_name'),
-            'last_name' : config.get('test_rez_avatar_request_setup', 'last_name'),
-            'age_verified' : config.get('test_rez_avatar_request_setup', 'age_verified'),
-            'agent_access' : config.get('test_rez_avatar_request_setup', 'agent_access'),
-            'god_level' :  config.get('test_rez_avatar_request_setup', 'god_level'),
-            'identified' :  config.get('test_rez_avatar_request_setup', 'identified'),
-            'transacted' : config.get('test_rez_avatar_request_setup', 'transacted'),
-            'limited_to_estate' : config.get('test_rez_avatar_request_setup', 'limited_to_estate'),
-            'sim_access' : config.get('test_rez_avatar_request_setup', 'sim_access'),
+            'first_name' : config.get(test_setup_config_name, 'first_name'),
+            'last_name' : config.get(test_setup_config_name, 'last_name'),
+            'age_verified' : config.get(test_setup_config_name, 'age_verified'),
+            'agent_access' : config.get(test_setup_config_name, 'agent_access'),
+            'god_level' :  config.get(test_setup_config_name, 'god_level'),
+            'identified' :  config.get(test_setup_config_name, 'identified'),
+            'transacted' : config.get(test_setup_config_name, 'transacted'),
+            'limited_to_estate' : config.get(test_setup_config_name, 'limited_to_estate'),
+            'sim_access' : config.get(test_setup_config_name, 'sim_access'),
             }
 
-        self.capability = Capability('rez_avatar/request', self.rez_request_avatar_url)
+        # to get re_avatar/request, we need to authenticate and retrieve the place_avatar cap from the AD
+        self.client = Agent()
+        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        self.caps = self.client.agentdomain.seed_cap.get(['rez_avatar/request'])
+
+        self.capability = Capability('rez_avatar/request', self.caps['rez_avatar/request'].public_url)
 
     def tearDown(self):
         pass
@@ -59,109 +72,43 @@ class RezAvatarRequestTests(unittest.TestCase):
                      result.has_key('region_id') and
                      result.has_key('sim_access') and
                      result.has_key('seed_capability'))
+    
+    def check_failure_response(self, result):
+        """ tests the failure response for the proper content """
+        
+        # { connect: False, message: string }
+        
+        self.assert_(result.has_key('connect') and
+                     result.has_key('message'))
+        self.assertEquals(result['connect'], False)
+
+    '''
+    write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Request_Rez_Avatar_.28Resource_Class.29
+    '''
+
 
     def test_rez_avatar_request_connect(self):
         """ Agent is allowed to connect """
+        
         result = self.postToCap(self.default_arguments)
         
         self.check_response_base(result)
         self.assertEquals(result['connect'], True)
 
         
-    def test_rez_avatar_request_region_x(self):
-        """ region_x is less than 256 """
-        result = self.postToCap(self.default_arguments)
+    def test_rez_avatar_request_nocontent(self):
+        """ posting to rez_avatar/request with no args, parse for failure response """
         
-        self.check_response_base(result)
-        self.assert_(result['region_x'] < 256)
-
-    def test_rez_avatar_request_region_y(self):
-        """ region_y is less than 256 """
-        result = self.postToCap(self.default_arguments)
-
-        self.check_response_base(result)
-        self.assert_(result['region_y'] < 256)
+        result = self.postToCap({})
+        
+        self.check_failure_response(result)
+        
+        print result
     
-    """
-    def test_rez_avatar_request_region_id_UUID(self):
-        ***  region_id is a UUID *** 
-        
-        #ToDo: find/implement a helper funtion for isUUID
-        result = self.postToCap(self.default_arguments)
-
-        self.check_successful_response(result)
-        self.assert_(isUUID(result['region_id']))
-     """                        
-
-    def test_rez_avatar_request_unverified(self):
-        """ Unverified agents should not be allowed """
-        args = self.default_arguments
-        args['age_verified'] = False
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
-
-    def test_rez_avatar_request_noaccess(self):
-        """ Agents without access cannot be allowed """
-        args = self.default_arguments
-        args['agent_access'] = False
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
-
-    def test_rez_avatar_request_unidentified(self):
-        """ Unidentified agents should not be allowed """
-        args = self.default_arguments
-        args['identified'] = False
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
-
-    def test_rez_avatar_request_godlevel(self):
-        """ Gods are allowed in teen regions """
-        args = self.default_arguments
-        args['god_level'] = 0
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
-
-    def test_rez_avatar_request_untransacted(self):
-        """ Agents not transacted are not allowed in ____ regions """
-        args = self.default_arguments
-        args['transacted'] = False
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
-
-    def test_rez_avatar_request_limited_estate(self):
-        """ Teens limited to estate 5 cannot access adult regions """
-        args = self.default_arguments
-        args['limited_to_estate'] = 5
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
-
-    def test_rez_avatar_request_sim_access(self):
-        """ Agents with PG access cannot access mature region """
-        args = self.default_arguments
-        args['sim_access'] = 'PG'
-
-        result = self.postToCap(args)
-
-        self.check_response_base(result)
-        self.assertEquals(result['connect'], False)
+    # Tests to write include (among many others):
+    #    post to the cap without having grabbed an agent domain seed cap
+    #    additional parameters
+    #    
 
 def test_suite():
     from unittest import TestSuite, makeSuite
