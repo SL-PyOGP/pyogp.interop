@@ -1,8 +1,8 @@
 import unittest, doctest
 import ConfigParser
 from pkg_resources import resource_stream
-
 import time
+import uuid
 
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
@@ -12,6 +12,9 @@ from pyogp.lib.base.registration import init
 from pyogp.lib.base.interfaces import IPlaceAvatar
 
 from pyogp.lib.base.OGPLogin import OGPLogin
+from pyogp.lib.base.message.message_system import MessageSystem
+from pyogp.lib.base.message.circuitdata import Host
+from pyogp.lib.base.message.message_types import MsgType
 
 class OGPTeleportTest(unittest.TestCase):
 
@@ -35,11 +38,11 @@ class OGPTeleportTest(unittest.TestCase):
         self.base_firstname = config.get('test_base_teleport', 'firstname')
         self.base_lastname = config.get('test_base_teleport', 'lastname')
         self.base_password = config.get('test_base_teleport', 'password')
+        #don't need a port, not sure why we have it there yet
+        self.messenger = MessageSystem(None)
 
     def test_base_teleport(self):
     
-        print 'Until Teleport is enabled in pyogp, we have nothing to do here'
-        '''
         credentials = PlainPasswordCredential(self.base_firstname, self.base_lastname, self.base_password)
         agentdomain = AgentDomain(self.login_uri)
 
@@ -79,8 +82,36 @@ class OGPTeleportTest(unittest.TestCase):
         assert avatar.region.details['session_id'] != None or avatar.region.details['session_id'] != {}, "Rez_avatar/place returned no session_id"
         assert avatar.region.details['secure_session_id'] != None or avatar.region.details['secure_session_id'] != {}, "Rez_avatar/place returned no secure_session_id" 
         assert avatar.region.details['circuit_code'] != None or avatar.region.details['circuit_code'] != {}, "Rez_avatar/place returned no cicuit_code"
-        '''
 
+        host = Host(avatar.region.details['sim_ip'],
+                    avatar.region.details['sim_port'])
+
+        #SENDS UseCircuitCode
+        self.messenger.new_message("UseCircuitCode")
+        self.messenger.next_block("CircuitCode")
+        self.messenger.add_data('Code', avatar.region.details['circuit_code'], \
+                                MsgType.MVT_U32)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(avatar.region.details['session_id']), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('ID', \
+                                uuid.UUID(agent.id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.send_message(host)
+
+        #SENDS CompleteAgentMovement
+        self.messenger.new_message("CompleteAgentMovement")
+        self.messenger.next_block("AgentData")
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(agent.id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(avatar.region.details['session_id']), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('CircuitCode', avatar.region.details['circuit_code'], \
+                                MsgType.MVT_U32)
+        self.messenger.send_message(host)
+        
        
     def tearDown(self):
         # essentially logout by deleting presence... etc.
