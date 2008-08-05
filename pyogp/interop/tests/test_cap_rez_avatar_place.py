@@ -9,6 +9,10 @@ from pyogp.lib.base.caps import Capability
 
 from helpers import Agent
 
+'''
+write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Place_Avatar_.28Resource_Class.29
+'''
+
 class RezAvatarPlaceTests(unittest.TestCase):
     """ test posting to rez_avatar/place for a simulator, acting as the region domain """
     
@@ -25,7 +29,8 @@ class RezAvatarPlaceTests(unittest.TestCase):
         self.region_uri = config.get('test_rez_avatar_place_setup', 'region_uri')
         self.position = config.get('test_rez_avatar_place_setup', 'position')
         
-        self.default_arguments = {
+        # required_parameters: { region_url: url string, position: [x real, y real, z real, ] }
+        self.required_parameters = {
             'region_url' : self.region_uri,
             'position' : self.position
             }
@@ -47,55 +52,62 @@ class RezAvatarPlaceTests(unittest.TestCase):
         '''
         
     def postToCap(self, arguments):
+        
+
         try:
             result = self.capability.POST(arguments)
-            print result
         except Exception, e:
-            print 'Exception: ' + e.message + ' ' + str(e.args)
-            return
+            #print 'Exception: ' + e.message + ' ' + str(e.args)
+            result = str(e.args)
 
         return result
 
     
-    def check_response_base(self, result):
-        """ check for the eistence of the correct parameters in the cap response """
+    def check_successful_response(self, result):
+        """ check for the existence of the correct parameters in the cap response """
 
+        # Success response: { connect: bool , seed_capability: url string , look_at: [x real, y real, z real, ] , position: [x real, y real, z real, ]}
+        
         self.assert_(result.has_key('connect') and
                      result.has_key('look_at') and
-                     result.has_key('position'))
+                     result.has_key('position') and
+                     result.has_key('seed_capability'))
+        
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+        
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
 
-    '''
-    todo: validate this
-    rez_avatar/place should return
-    
-    Response
+    def check_failure_response(self, result):
+        """ tests the failure response for the proper content """
+        
+        # docs are missing this detail
+        
+        print result 
 
-    {
-      'seed_capability': uri string
-      'look_at' : [f32, f32, f32]
-      'sim_ip': ip string
-      'sim_port': int
-      'region_x': int
-      'region_y': int
-      'region_id' : uuid
-      'sim_access' : <PG/Mature>
-      'connect': bool
-      'position': [f32, f32, f32]
-    // The above are the same as response to rez_avatar
-    // The following are only returned on login, not over teleport
-       'session_id':<uuid>
-       'secure_session_id':<uuid>
-       'circuit_code':<int>
-    }
-    '''
-
-    def test_rez_avatar_place_connect(self):
+###################################
+#           Test Cases            #
+###################################
+                     
+    def test_rez_avatar_place_required(self):
         """ agent is allowed to rez """
 
-        result = self.postToCap(self.default_arguments)
+        result = self.postToCap(self.required_parameters)
 
-        self.check_response_base(result)
+        self.check_successful_response(result)
         self.assertEquals(result['connect'], True)
+    
+    '''   
+    def test_rez_avatar_place_nocontent(self):
+        """ agent is allowed to rez """
+
+        result = self.postToCap({'region_url' : '', 'position' : ''})
+
+        self.check_failure_response(result)
+    '''
 
 def test_suite():
     from unittest import TestSuite, makeSuite

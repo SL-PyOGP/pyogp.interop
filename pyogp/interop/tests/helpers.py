@@ -68,6 +68,13 @@ class Agent():
 
         #gets seedcap, and an agent that can be placed in a region
         self.agentdomain.login(credentials)
+    
+    def retrieveCap(self, capability_name):
+        """ post to the seedcap to retrieve a capability url """
+        
+        caps = self.agentdomain.seed_cap.get([capability_name])
+        
+        return caps
 
     def rezOnSim(self, region_uri):
         """ rez on a sim, aka teleport """
@@ -86,8 +93,9 @@ class Agent():
         """ logs the agent out of the grid """
 
         # currently, we don't disconnect from the sim, b/c we never really connect there, so let's just sleep for a mo or 10 so the AD timesout
-        # another way to go about it would be to call derez 
-        time.sleep(30)
+        # another way to go about it would be to call derez?
+        # would love to put a flag on the agent that indicates whether they logged in or not, so we could conditionally call logout in the tests
+        time.sleep(15)
     
     
     def postToLoginUri(self, firstname, lastname, password, login_uri):

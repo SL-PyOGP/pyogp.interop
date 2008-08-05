@@ -9,6 +9,13 @@ from pyogp.lib.base.caps import Capability
 
 from helpers import Agent
 
+'''
+
+write tests against region/info, a region domain cap
+http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Region_Information_.28Resource_Class.29
+
+'''
+
 class testCapRegionInfo(unittest.TestCase):
 
     def setUp(self):
@@ -23,13 +30,15 @@ class testCapRegionInfo(unittest.TestCase):
         self.login_uri = config.get('test_cap_region_info_setup', 'login_uri')
         self.region_uri = config.get('test_cap_region_info_setup', 'region_uri')
        
-        self.clent = Agent()
+        self.client = Agent()
+        # incomplete until a method for retrieving the cap and calling the URL via GET is available
         
     def tearDown(self):
-        
-        self.client.logout()
+
+        # uncomment once tests can be run        
+        # self.client.logout()
         '''
-        if self.client.agentdomain != None:
+        if {agent is logged in flag is set}
             self.client.logout()
         '''
     
@@ -37,45 +46,41 @@ class testCapRegionInfo(unittest.TestCase):
         """ sends a get to the cap """
 
         # create a helper to get the cap
-
-    '''
-    def postToCap(self, arguments):
-        try:
-            result = self.capability.POST(arguments)
-            print result
-        except Exception, e:
-            print 'Exception: ' + e.message + ' ' + str(e.args)
-            return
-
-        return result
-    '''
     
     def check_response_base(self, result):
         """ check for the eistence of the correct parameters in the cap response """
 
+        # successful response contains: 
         # {sim_ip: string , sim_port: int . region_x: int , region_y: int , region_z: int , region_id: uuid , access: 'PG' | 'Mature' }
-        self.assert_(result.has_key('connect') and
-                     result.has_key('look_at') and
-                     result.has_key('position'))
+        self.assert_(result.has_key('sim_ip') and
+                     result.has_key('sim_port') and
+                     result.has_key('region_x') and
+                     result.has_key('region_y') and
+                     result.has_key('region_z') and
+                     result.has_key('region_id') and
+                     result.has_key('access'))
 
-
-    '''
-
-    write tests against region/info, a region domain cap
-    http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Region_Information_.28Resource_Class.29
-
-    '''
+###################################
+#           Test Cases            #
+###################################
+    # Until a GET exists for caps (need to clear this up with LL and pyogp), no tests can be run
 
     def test_cap_region_info_base(self):
         """ agent/info cap returns the right reponse with the right inputs params """
+        
+        print 'Until we can request the url for region/info, we cannot test this'        
         pass
 
     def test_cap_region_info_online(self):
         """ agent/info cap returns the right response for an online agent """
+
+        print 'Until we can request the url for region/info, we cannot test this' 
         pass
     
     def test_cap_region_info_offline(self):
         """ agent/info cap returns the right response for an offline agent """
+
+        print 'Until we can request the url for region/info, we cannot test this' 
         pass
 
     # etc etc

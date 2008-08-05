@@ -84,7 +84,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         # this is the AD seed cap
         assert response['location'] != None
         '''
-        print response
+        
         assert response != None
         
     def test_auth_unknown_account(self):

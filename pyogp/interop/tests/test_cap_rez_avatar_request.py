@@ -9,6 +9,10 @@ from pyogp.lib.base.caps import Capability
 
 from helpers import Agent
 
+'''
+write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Request_Rez_Avatar_.28Resource_Class.29
+'''
+
 class RezAvatarRequestTests(unittest.TestCase):
     """ test posting to rez_avatar/request for a simulator, acting as the region domain """
     
@@ -27,12 +31,25 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.lastname = config.get(test_setup_config_name, 'lastname')
         self.password = config.get(test_setup_config_name, 'password')
         self.login_uri = config.get(test_setup_config_name, 'login_uri')
+        
+        # we can't request this cap, but we can craft it ourselves
+        self.rez_request_avatar_url = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/request'
+        
+        # Required parameters: { agent_id: uuid, first_name: string , last_name: string }       
+        
+        self.required_parameters = {
+            'agent_id' : self.agent_id,
+            'first_name' : config.get(test_setup_config_name, 'first_name'),
+            'last_name' : config.get(test_setup_config_name, 'last_name'),
+        }
                 
-        self.default_arguments={
+        # Optional parameters: { age_verified: bool , agent_access: bool , allow_redirect: bool , god_level: int , identified: bool , transacted: bool , limited_to_estate: int , sim_access: "PG"|"Mature" }
+        self.full_parameters = {
             'agent_id' : self.agent_id,
             'first_name' : config.get(test_setup_config_name, 'first_name'),
             'last_name' : config.get(test_setup_config_name, 'last_name'),
             'age_verified' : config.get(test_setup_config_name, 'age_verified'),
+            #'allow_redirect' : config.get(test_setup_config_name, 'allow_redirect'),
             'agent_access' : config.get(test_setup_config_name, 'agent_access'),
             'god_level' :  config.get(test_setup_config_name, 'god_level'),
             'identified' :  config.get(test_setup_config_name, 'identified'),
@@ -42,13 +59,15 @@ class RezAvatarRequestTests(unittest.TestCase):
             }
 
         # to get re_avatar/request, we need to authenticate and retrieve the place_avatar cap from the AD
-        self.client = Agent()
-        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
-        self.caps = self.client.agentdomain.seed_cap.get(['rez_avatar/request'])
+        #self.client = Agent()
+        #self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        
 
-        self.capability = Capability('rez_avatar/request', self.caps['rez_avatar/request'].public_url)
+        self.capability = Capability('rez_avatar/request', self.rez_request_avatar_url)
 
     def tearDown(self):
+        
+        # we don't login, don't need to logout
         pass
 
     def postToCap(self, arguments):
@@ -60,17 +79,12 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         return result
 
-    def check_response_base(self, result):
+    def check_successful_response(self, result):
+        """ a successful response has certain components """
         
-        # check for existence of fields
+        # Success response: { connect: "True", rez_avatar/rez: url , seed_capability: url }
         self.assert_(result.has_key('connect') and
                      result.has_key('rez_avatar/rez') and
-                     result.has_key('sim_ip') and
-                     result.has_key('sim_port') and
-                     result.has_key('region_x') and
-                     result.has_key('region_y') and
-                     result.has_key('region_id') and
-                     result.has_key('sim_access') and
                      result.has_key('seed_capability'))
     
     def check_failure_response(self, result):
@@ -82,19 +96,29 @@ class RezAvatarRequestTests(unittest.TestCase):
                      result.has_key('message'))
         self.assertEquals(result['connect'], False)
 
-    '''
-    write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Request_Rez_Avatar_.28Resource_Class.29
-    '''
+###################################
+#           Test Cases            #
+###################################
+    # Tests to write include (among many others):
+    #    post to the cap without having grabbed an agent domain seed cap
+    #    additional parameters
+    #    mismatched inputs
 
-
-    def test_rez_avatar_request_connect(self):
+    def test_rez_avatar_request_required(self):
         """ Agent is allowed to connect """
         
-        result = self.postToCap(self.default_arguments)
+        result = self.postToCap(self.required_parameters)
         
-        self.check_response_base(result)
+        self.check_successful_response(result)
         self.assertEquals(result['connect'], True)
 
+    def test_rez_avatar_request_full(self):
+        """ Agent is allowed to connect """
+        
+        result = self.postToCap(self.full_parameters)
+        
+        self.check_successful_response(result)
+        self.assertEquals(result['connect'], True)
         
     def test_rez_avatar_request_nocontent(self):
         """ posting to rez_avatar/request with no args, parse for failure response """
@@ -102,14 +126,7 @@ class RezAvatarRequestTests(unittest.TestCase):
         result = self.postToCap({})
         
         self.check_failure_response(result)
-        
-        print result
     
-    # Tests to write include (among many others):
-    #    post to the cap without having grabbed an agent domain seed cap
-    #    additional parameters
-    #    
-
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
