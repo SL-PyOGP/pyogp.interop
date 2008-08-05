@@ -29,10 +29,16 @@ class testCapAgentInfo(unittest.TestCase):
         self.password = config.get('test_cap_agent_info_setup', 'password')
         self.login_uri = config.get('test_cap_agent_info_setup', 'login_uri')
         self.region_uri = config.get('test_cap_agent_info_setup', 'region_uri')
-       
+        
         self.client = Agent()
-        # have to auth before being able to get the agent/info cap
-        # incomplete until a method for retrieving the cap and calling the URL via GET is available
+        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        self.caps = self.client.agentdomain.seed_cap.get(['agent/info'])
+        
+        print 'Seed cap is: ' + self.client.agentdomain.seed_cap.public_url
+        print 'agent/info cap is: ' + self.caps['agent/info'].public_url
+        
+        # initialize the cap object for use in postToCap
+        self.capability = Capability('agent/info', self.caps['agent/info'].public_url)
         
     def tearDown(self):
         
@@ -46,10 +52,16 @@ class testCapAgentInfo(unittest.TestCase):
     def getCap(self):
         """ sends a get to the cap """
 
-        # create a helper to get the cap
+        try:
+            result = self.capability.GET()
+        except Exception, e:
+            #print 'Exception: ' + e.message + ' ' + str(e.args)
+            result = str(e.args)
+
+        return result
     
     def check_response_base(self, result):
-        """ check for the eistence of the correct parameters in the cap response """
+        """ check for the existence of the correct parameters in the cap response """
 
         # successful response contains: 
         # { agent_id: uuid , circuit_code: int , session_id: uuid , secure_session_id: uuid , presence: { status: "online"|"offline" , region_url: url } }
@@ -62,22 +74,17 @@ class testCapAgentInfo(unittest.TestCase):
 ###################################
 #           Test Cases            #
 ###################################
-    # Until a GET exists for caps (need to clear this up with LL and pyogp), no tests can be run
+    # Add moar tests
 
                      
     def test_cap_agent_info_online(self):
         """ agent/info cap returns the right response for an online agent """
         
-        print 'Until we can request the url for agent/info, we cannot test this'
-        pass
-    
-    def test_cap_agent_info_offline(self):
-        """ agent/info cap returns the right response for an offline agent """
+        response = self.getCap()
         
-        print 'Until we can request the url for agent/info, we cannot test this'
-        pass
+        self.check_response_base(response)
+    
 
-    # etc etc
 
 
 def test_suite():

@@ -32,6 +32,7 @@ class testCapRegionInfo(unittest.TestCase):
        
         self.client = Agent()
         # incomplete until a method for retrieving the cap and calling the URL via GET is available
+        # will want to post the request for the region/info cap from the sim, and GET it
         
     def tearDown(self):
 
@@ -45,7 +46,13 @@ class testCapRegionInfo(unittest.TestCase):
     def getCap(self):
         """ sends a get to the cap """
 
-        # create a helper to get the cap
+        try:
+            result = self.capability.GET()
+        except Exception, e:
+            #print 'Exception: ' + e.message + ' ' + str(e.args)
+            result = str(e.args)
+
+        return result
     
     def check_response_base(self, result):
         """ check for the eistence of the correct parameters in the cap response """
@@ -63,7 +70,7 @@ class testCapRegionInfo(unittest.TestCase):
 ###################################
 #           Test Cases            #
 ###################################
-    # Until a GET exists for caps (need to clear this up with LL and pyogp), no tests can be run
+    # region/info is implemented, no reason to write tests for it
 
     def test_cap_region_info_base(self):
         """ agent/info cap returns the right reponse with the right inputs params """
