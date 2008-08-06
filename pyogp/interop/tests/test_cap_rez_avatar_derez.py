@@ -10,6 +10,10 @@ from pyogp.lib.base.caps import Capability
 from helpers import Agent
 
 '''
+# in progress, tests are skipped
+
+Tests for the rez_avatar/derez capability as run against simulators (acting as the agent domain)
+
 write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Derez_Avatar_.28Resource_Class.29
 '''
 
@@ -29,7 +33,7 @@ class RezAvatarDerezTest(unittest.TestCase):
         self.source_region_uri = config.get(test_setup_config_name, 'source_region_uri')
         self.target_region_uri = config.get(test_setup_config_name, 'target_region_uri')
         self.position = config.get(test_setup_config_name, 'position')
-        self.region_uri = config.get(test_setup_config_name, 'region_uri')
+        #self.region_uri = config.get(test_setup_config_name, 'region_uri')
         self.firstname = config.get(test_setup_config_name, 'firstname')
         self.lastname = config.get(test_setup_config_name, 'lastname')
         self.password = config.get(test_setup_config_name, 'password')
@@ -52,7 +56,7 @@ class RezAvatarDerezTest(unittest.TestCase):
         self.client.login(self.firstname, self.lastname, self.password, self.login_uri, self.region_uri)
         
     def tearDown(self):
-    
+        pass
         # uncomment once this test can be used
         # self.client.logout()
 

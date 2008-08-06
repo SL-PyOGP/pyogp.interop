@@ -10,6 +10,8 @@ from pyogp.lib.base.caps import Capability
 from helpers import Agent
 
 '''
+Tests for the rez_avatar/place capability as run against simulators (acting as the client)
+
 write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Place_Avatar_.28Resource_Class.29
 '''
 
@@ -46,6 +48,7 @@ class RezAvatarPlaceTests(unittest.TestCase):
     def tearDown(self):
         
         self.client.logout()
+        
         '''
         if self.client.agentdomain != None:
             self.client.logout()
@@ -63,23 +66,12 @@ class RezAvatarPlaceTests(unittest.TestCase):
         return result
 
     
-    def check_successful_response(self, result):
+    def check_response(self, result):
         """ check for the existence of the correct parameters in the cap response """
 
         # Success response: { connect: bool , seed_capability: url string , look_at: [x real, y real, z real, ] , position: [x real, y real, z real, ]}
         
-        self.assert_(result.has_key('connect') and
-                     result.has_key('look_at') and
-                     result.has_key('position') and
-                     result.has_key('seed_capability'))
-        
-        self.assert_(result['position'][0] < 256 and
-                     result['position'][1] < 256 and 
-                     result['position'][2] < 256)
-        
-        self.assert_(result['look_at'][0] < 256 and
-                     result['look_at'][1] < 256 and 
-                     result['look_at'][2] < 256)
+        self.assertNotEquals(result, None, 'empty response')
 
     def check_failure_response(self, result):
         """ tests the failure response for the proper content """
@@ -91,23 +83,68 @@ class RezAvatarPlaceTests(unittest.TestCase):
 ###################################
 #           Test Cases            #
 ###################################
+# these these tests act as a client, they run more slowly. include as much validation as possible into one test function
+
                      
     def test_rez_avatar_place_required(self):
         """ agent is allowed to rez """
 
         result = self.postToCap(self.required_parameters)
 
-        self.check_successful_response(result)
+        self.check_response(result)
         self.assertEquals(result['connect'], True)
-    
-    '''   
+ 
+        self.assert_(result.has_key('connect') and
+                     result.has_key('look_at') and
+                     result.has_key('position') and
+                     result.has_key('seed_capability'))
+        
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+        
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)   
+   
     def test_rez_avatar_place_nocontent(self):
         """ agent is allowed to rez """
 
         result = self.postToCap({'region_url' : '', 'position' : ''})
 
-        self.check_failure_response(result)
-    '''
+        print result
+        # the library is trapping the 400, perhaps it should be allowed to filter here for testing? 
+        self.check_response(result)
+
+    def test_rez_avatar_place_invalid_region_uri(self):
+        """ agent is allowed to rez """
+
+        self.required_parameters['region_url'] = 'http://imnotreal.net'
+        result = self.postToCap(self.required_parameters)
+
+        print result
+        # the library is trapping the 400, perhaps it should be allowed to filter here for testing? 
+        self.check_response(result)
+
+    def test_cap_rez_avatar_place_success_keys(self):
+        """ test that a success response contains no additional keys """
+        
+        result = self.postToCap(self.required_parameters)
+        
+        self.check_response(result)
+        
+        valid_keys = ['connect', 'look_at', 'position', 'seed_capability']
+        fail = 0 
+        extra_keys = ''
+        
+        for key in result:
+            try:
+                valid_keys.index(key) # if the key is in our valid list, sweet
+            except:
+                fail = 1
+                extra_keys = extra_keys + ' ' + key
+        
+        self.assertEquals(fail, 0, 'response has additional keys: ' + extra_keys)
 
 def test_suite():
     from unittest import TestSuite, makeSuite
