@@ -67,13 +67,25 @@ class OGPTeleportTest(unittest.TestCase):
         
         avatar = place(region)
 
-        #import pprint
-        #pprint.pprint(avatar.region.details)
-
+        print 'Circuit code: ' + str(avatar.region.details['circuit_code'])
+        
         agent_id = avatar.region.details['agent_id']
         #begin UDP communication
         host = Host(avatar.region.details['sim_ip'],
                     avatar.region.details['sim_port'])
+
+        #SENDS AddCircuitCode
+        self.messenger.new_message("AddCircuitCode")
+        self.messenger.next_block("CircuitCode")
+        self.messenger.add_data('Code', avatar.region.details['circuit_code'], \
+                                MsgType.MVT_U32)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(avatar.region.details['session_id']), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.send_reliable(host, 0)
 
         #SENDS UseCircuitCode
         self.messenger.new_message("UseCircuitCode")
@@ -86,8 +98,8 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.add_data('ID', \
                                 uuid.UUID(agent_id), \
                                 MsgType.MVT_LLUUID)
-        self.messenger.send_message(host)
-
+        self.messenger.send_reliable(host, 0)
+        
         #SENDS CompleteAgentMovement
         self.messenger.new_message("CompleteAgentMovement")
         self.messenger.next_block("AgentData")
@@ -99,9 +111,20 @@ class OGPTeleportTest(unittest.TestCase):
                                 MsgType.MVT_LLUUID)
         self.messenger.add_data('CircuitCode', avatar.region.details['circuit_code'], \
                                 MsgType.MVT_U32)
-        self.messenger.send_message(host)
-
-
+        self.messenger.send_reliable(host, 0)
+        
+        while True:
+            recv_message = ''
+            print 'Looping'
+            try:
+                if self.messenger.receive_check() == True:
+                    recv_message = self.messenger.reader.current_msg
+                    print 'Message received: ' + recv_message.name
+                    break
+                else:
+                    print 'No message'
+            except:
+                pass
 
         # To do: this test is failing, though the ad recieved the request. the derez avatar call fails....
         #time.sleep(10)
