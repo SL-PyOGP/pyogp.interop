@@ -46,6 +46,7 @@ class OGPTeleportTest(unittest.TestCase):
         self.base_password = config.get('test_base_teleport', 'password')
         #don't need a port, not sure why we have it there yet
         self.messenger = MessageSystem(None)
+        self.host = None
 
     def test_base_teleport(self):
     
@@ -68,14 +69,27 @@ class OGPTeleportTest(unittest.TestCase):
         avatar = place(region)
 
         print 'Circuit code: ' + str(avatar.region.details['circuit_code'])
+        circuit_code = avatar.region.details['circuit_code']
+        import struct
+        p_circuit = struct.pack("<L", circuit_code)
+        print 'Little Circuit code: ' + repr(p_circuit)
+        print 'Unpacked little to big: ' + str(struct.unpack(">L", p_circuit))
+
+        b_circuit = struct.pack(">L", circuit_code)
+        print 'Big Circuit code: ' + repr(b_circuit)
+        print 'Unpacked Big to little: ' + str(struct.unpack("<L", p_circuit))
         
         agent_id = avatar.region.details['agent_id']
+        print 'Agent_id: ' + repr(agent_id)
+        session_id = avatar.region.details['session_id']
+        print 'Session_d: ' + repr(session_id)
+        
         #begin UDP communication
-        host = Host(avatar.region.details['sim_ip'],
+        self.host = Host(avatar.region.details['sim_ip'],
                     avatar.region.details['sim_port'])
 
         #SENDS AddCircuitCode
-        self.messenger.new_message("AddCircuitCode")
+        """self.messenger.new_message("AddCircuitCode")
         self.messenger.next_block("CircuitCode")
         self.messenger.add_data('Code', avatar.region.details['circuit_code'], \
                                 MsgType.MVT_U32)
@@ -85,7 +99,9 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.add_data('AgentID', \
                                 uuid.UUID(agent_id), \
                                 MsgType.MVT_LLUUID)
-        self.messenger.send_reliable(host, 0)
+        self.messenger.send_reliable(self.host, 0)
+        print 'Data: ' + repr(self.messenger.send_buffer)
+        time.sleep(2)"""
 
         #SENDS UseCircuitCode
         self.messenger.new_message("UseCircuitCode")
@@ -98,8 +114,10 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.add_data('ID', \
                                 uuid.UUID(agent_id), \
                                 MsgType.MVT_LLUUID)
-        self.messenger.send_reliable(host, 0)
-        
+        self.messenger.send_reliable(self.host, 0)
+
+        time.sleep(1)
+
         #SENDS CompleteAgentMovement
         self.messenger.new_message("CompleteAgentMovement")
         self.messenger.next_block("AgentData")
@@ -111,20 +129,18 @@ class OGPTeleportTest(unittest.TestCase):
                                 MsgType.MVT_LLUUID)
         self.messenger.add_data('CircuitCode', avatar.region.details['circuit_code'], \
                                 MsgType.MVT_U32)
-        self.messenger.send_reliable(host, 0)
+        self.messenger.send_reliable(self.host, 0)
+        print 'Data: ' + repr(self.messenger.send_buffer)
+        print 'Length of data: ' + str(len(self.messenger.send_buffer))
         
         while True:
             recv_message = ''
-            print 'Looping'
-            try:
-                if self.messenger.receive_check() == True:
-                    recv_message = self.messenger.reader.current_msg
-                    print 'Message received: ' + recv_message.name
-                    break
-                else:
-                    print 'No message'
-            except:
-                pass
+            if self.messenger.receive_check() == True:
+                recv_message = self.messenger.reader.current_msg
+                print 'Message received: ' + recv_message.name
+                break
+            else:
+                print 'No message'
 
         # To do: this test is failing, though the ad recieved the request. the derez avatar call fails....
         #time.sleep(10)
@@ -151,7 +167,16 @@ class OGPTeleportTest(unittest.TestCase):
        
     def tearDown(self):
         # essentially logout by deleting presence... etc.
-        pass
+        """self.messenger.new_message("LogoutRequest")
+        self.messenger.next_block("AgentData")
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(avatar.region.details['session_id']), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.send_message(self.host, 0)"""
+
         
 def test_suite():
     from unittest import TestSuite, makeSuite
