@@ -27,7 +27,7 @@ class RezAvatarRezTests(unittest.TestCase):
         
         # grab the testdata from testconfig.cfg
         self.agent_id = self.config.get(self.test_setup_config_name, 'agent_id')
-        self.region_uri = self.config.get('test_interop_regions', 'linden_start_region_uri')
+        self.region_uri = self.config.get('test_interop_regions', 'start_region_uri')
         self.position = self.config.get(self.test_setup_config_name, 'position')
         
         # we can't request this cap, but we can craft it ourselves        

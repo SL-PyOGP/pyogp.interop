@@ -34,8 +34,8 @@ class RezAvatarDerezTest(unittest.TestCase):
         self.login_uri = config.get('test_interop_account', 'login_uri')
         self.agent_id = config.get('test_interop_account', 'agent_id') # this can come from self.client.id once agent/info is working
         
-        self.source_region_uri = config.get('test_interop_regions', 'linden_start_region_uri')        
-        self.target_region_uri = config.get('test_interop_regions', 'linden_target_region_uri')
+        self.source_region_uri = config.get('test_interop_regions', 'start_region_uri')        
+        self.target_region_uri = config.get('test_interop_regions', 'target_region_uri')
         
         self.position = config.get('test_rez_avatar_derez', 'position') 
 

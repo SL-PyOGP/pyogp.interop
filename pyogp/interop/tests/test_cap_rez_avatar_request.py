@@ -35,7 +35,7 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.login_uri = self.config.get('test_interop_account', 'login_uri')
         self.agent_id = self.config.get('test_interop_account', 'agent_id') # this can come from self.client.id once agent/info is working
         
-        self.region_uri = self.config.get('test_interop_regions', 'linden_start_region_uri') 
+        self.region_uri = self.config.get('test_interop_regions', 'start_region_uri') 
         
         # we can't request this cap, but we can craft it ourselves
         self.rez_avatar_request_url = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/request'

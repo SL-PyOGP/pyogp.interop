@@ -29,7 +29,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.lastname = self.config.get(self.test_setup_config_name, 'lastname')
         self.password = self.config.get(self.test_setup_config_name, 'password')
         self.login_uri = self.config.get(self.test_setup_config_name, 'login_uri')        
-        self.region_uri = self.config.get('test_interop_regions', 'linden_start_region_uri') 
+        self.region_uri = self.config.get('test_interop_regions', 'start_region_uri') 
 
         self.client = Agent()
 
