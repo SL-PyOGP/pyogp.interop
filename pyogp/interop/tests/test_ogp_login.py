@@ -44,7 +44,7 @@ class AuthOGPLoginTest(unittest.TestCase):
  
         self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
         
-        if self.debug: print 'Authenticating: ' + self.firstname, self.lastname, self.password, self.login_uri
+        if self.debug: print 'Authenticating: ' + self.firstname, self.lastname, self.login_uri
 
         #gets seedcap, and an agent that can be placed in a region
         assert self.client.agentdomain.seed_cap.public_url != None or self.client.agentdomain.seed_cap.public_url != {}, "Login to agent domain failed"
