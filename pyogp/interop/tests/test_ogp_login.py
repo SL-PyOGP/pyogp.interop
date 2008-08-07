@@ -22,33 +22,36 @@ class AuthOGPLoginTest(unittest.TestCase):
         # initialize the config
         self.config = ConfigParser.ConfigParser()
         self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
-       
-        # global test attributes
-        self.login_uri = self.config.get('test_ogplogin_setup', 'login_uri')
-        self.region_uri = self.config.get('test_ogplogin_setup', 'region_uri')
+        
+        self.test_setup_config_name = 'test_interop_account'
+        
+        self.firstname = self.config.get(self.test_setup_config_name, 'firstname')
+        self.lastname = self.config.get(self.test_setup_config_name, 'lastname')
+        self.password = self.config.get(self.test_setup_config_name, 'password')
+        self.login_uri = self.config.get(self.test_setup_config_name, 'login_uri')        
+        self.region_uri = self.config.get('test_interop_regions', 'linden_start_region_uri') 
 
         self.client = Agent()
 
     def tearDown(self):
        
-        if False: # need a flag in the lib for when an agent has logged in 
+        if True: # need a flag in the lib for when an agent has logged in 
             self.client.logout()
         
     def test_base_login(self):
         """ login with an account which should just work """
         # in the case the of the OGP Beta, memdership in the gridnauts group is required
-        
-        # test_base_login attributes
-        firstname = self.config.get('test_base_login', 'firstname')
-        lastname = self.config.get('test_base_login', 'lastname')
-        password = self.config.get('test_base_login', 'password')
  
-        self.client.authenticate(firstname, lastname, password, self.login_uri)
+        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
+        
+        if self.debug: print 'Authenticating: ' + self.firstname, self.lastname, self.password, self.login_uri
 
         #gets seedcap, and an agent that can be placed in a region
         assert self.client.agentdomain.seed_cap.public_url != None or self.client.agentdomain.seed_cap.public_url != {}, "Login to agent domain failed"
  
         self.client.rezOnSim(self.region_uri)
+        
+        print self.client.region.details
         
         # test that rez_avatar/place contains the proper respose data
         assert self.client.avatar.region.details['seed_capability'] != None or client.avatar.region.details['seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
@@ -67,14 +70,11 @@ class AuthOGPLoginTest(unittest.TestCase):
 
     def test_auth_base_account(self):
         """ auth with an account which should just work """
-        
-        # test_base_login attributes
-        firstname = self.config.get('test_auth_base_account', 'firstname')
-        lastname = self.config.get('test_auth_base_account', 'lastname')
-        password = self.config.get('test_auth_base_account', 'password')    
-    
-        response = self.client.postToLoginUri(firstname, lastname, password, self.login_uri)
-        
+
+        response = self.client.postToLoginUri(self.firstname, self.lastname, self.password, self.login_uri)
+
+        if self.debug: print 'Login response (headers.location)  = ' + str(response)
+                
         # once the redirect is gone, this is the appropriate test
         '''
         assert (response.has_key('authenticated') and
@@ -90,13 +90,10 @@ class AuthOGPLoginTest(unittest.TestCase):
     def test_auth_unknown_account(self):
         """ auth with an account which should just never work """
         
-        # test_base_login attributes
-        firstname = self.config.get('test_auth_unknown_account', 'firstname')
-        lastname = self.config.get('test_auth_unknown_account', 'lastname')
-        password = self.config.get('test_auth_unknown_account', 'password')    
-    
-        response = self.client.postToLoginUri(firstname, lastname, password, self.login_uri)
-        
+        response = self.client.postToLoginUri('foxinsox', 'greeneggsandham', 'tweetlebeetlebattle', self.login_uri)
+
+        if self.debug: print 'result  = ' + str(response)
+                
         assert (response.has_key('authenticated') and
                 response.has_key('reason') and
                 response.has_key('message'))

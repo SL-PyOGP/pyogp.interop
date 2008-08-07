@@ -21,18 +21,21 @@ class RezAvatarRequestTests(unittest.TestCase):
     def setUp(self):
         init()
 
-        config = ConfigParser.ConfigParser()
-        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        self.config = ConfigParser.ConfigParser()
+        self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        test_setup_config_name = 'test_rez_avatar_request_setup'
+        self.debug = self.config.get('testconfig', 'debug')
+        
+        self.test_setup_config_name = 'test_rez_avatar_request'
         
         # grab the testdata from testconfig.cfg
-        self.agent_id = config.get(test_setup_config_name, 'agent_id')
-        self.region_uri = config.get(test_setup_config_name, 'region_uri')
-        self.firstname = config.get(test_setup_config_name, 'firstname')
-        self.lastname = config.get(test_setup_config_name, 'lastname')
-        self.password = config.get(test_setup_config_name, 'password')
-        self.login_uri = config.get(test_setup_config_name, 'login_uri')
+        self.firstname = self.config.get('test_interop_account', 'firstname')
+        self.lastname = self.config.get('test_interop_account', 'lastname')
+        self.password = self.config.get('test_interop_account', 'password')
+        self.login_uri = self.config.get('test_interop_account', 'login_uri')
+        self.agent_id = self.config.get('test_interop_account', 'agent_id') # this can come from self.client.id once agent/info is working
+        
+        self.region_uri = self.config.get('test_interop_regions', 'linden_start_region_uri') 
         
         # we can't request this cap, but we can craft it ourselves
         self.rez_avatar_request_url = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/request'
@@ -41,31 +44,33 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         self.required_parameters = {
             'agent_id' : self.agent_id,
-            'first_name' : config.get(test_setup_config_name, 'first_name'),
-            'last_name' : config.get(test_setup_config_name, 'last_name'),
+            'first_name' : self.firstname,
+            'last_name' : self.lastname
         }
                 
         # Optional parameters: { age_verified: bool , agent_access: bool , allow_redirect: bool , god_level: int , identified: bool , transacted: bool , limited_to_estate: int , sim_access: "PG"|"Mature" }
         self.full_parameters = {
             'agent_id' : self.agent_id,
-            'first_name' : config.get(test_setup_config_name, 'first_name'),
-            'last_name' : config.get(test_setup_config_name, 'last_name'),
-            'age_verified' : config.get(test_setup_config_name, 'age_verified'),
-            'allow_redirect' : config.get(test_setup_config_name, 'allow_redirect'),
-            'agent_access' : config.get(test_setup_config_name, 'agent_access'),
-            'god_level' :  config.get(test_setup_config_name, 'god_level'),
-            'identified' :  config.get(test_setup_config_name, 'identified'),
-            'transacted' : config.get(test_setup_config_name, 'transacted'),
-            'limited_to_estate' : config.get(test_setup_config_name, 'limited_to_estate'),
-            'sim_access' : config.get(test_setup_config_name, 'sim_access'),
+            'first_name' : self.firstname,
+            'last_name' : self.lastname,
+            'age_verified' : self.config.get(self.test_setup_config_name, 'age_verified_true'),
+            'allow_redirect' : self.config.get(self.test_setup_config_name, 'allow_redirect_true'),
+            'agent_access' : self.config.get(self.test_setup_config_name, 'agent_access_true'),
+            'god_level' :  self.config.get(self.test_setup_config_name, 'god_level_0'),
+            'identified' :  self.config.get(self.test_setup_config_name, 'identified_true'),
+            'transacted' : self.config.get(self.test_setup_config_name, 'transacted_true'),
+            'limited_to_estate' : self.config.get(self.test_setup_config_name, 'limited_to_estate_mainland'),
+            'sim_access' : self.config.get(self.test_setup_config_name, 'sim_access_Mature'),
             }
 
         # were we to auth first...
         #self.client = Agent()
         #self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
         
-        # but we can craft the url and manual test things
+        # but we can craft the url and manual test things, as we can just post to the sim the info without anoy other context
         self.capability = Capability('rez_avatar/request', self.rez_avatar_request_url)
+        
+        if self.debug: print 'rez_avatar/request url = ' + self.rez_avatar_request_url
 
     def tearDown(self):
         
@@ -73,6 +78,9 @@ class RezAvatarRequestTests(unittest.TestCase):
         pass
 
     def postToCap(self, arguments):
+    
+        if self.debug: print 'posting to cap = ' + str(arguments)
+        
         try:
             result = self.capability.POST(arguments)
         except Exception, e:
@@ -109,6 +117,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
         
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True')
 
@@ -116,6 +126,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         """ test that a success response contains no additional keys """
         
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)
         
@@ -137,6 +149,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         result = self.postToCap(self.full_parameters)
         
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True')
 
@@ -144,6 +158,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         """ Agent is allowed to connect """
         
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)
         self.assert_(result.has_key('seed_capability')), 'response is missing seed_capability attribute'
@@ -153,6 +169,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         result = self.postToCap({})
         
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         self.assertEquals(result['connect'], False)
     
@@ -160,6 +178,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         """ posting to rez_avatar/request with no args, parse for failure response """
         
         result = self.postToCap({})
+        
+        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)
         self.assertEquals(result['message'], 'You are not allowed into the destination.', 'improper failure message')    
@@ -170,6 +190,8 @@ class RezAvatarRequestTests(unittest.TestCase):
 
         result = self.postToCap({})
         
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)               
         self.assertNotEquals(result['message'], None, 'no message text in failure response')
 
@@ -178,6 +200,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         del self.required_parameters['agent_id']
         result = self.postToCap(self.required_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], False, 'connect attribute is not True')
@@ -187,7 +211,9 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         self.required_parameters['agent_id'] = '00000000-0000-0000-0000-00000000000000'
         result = self.postToCap(self.required_parameters)
-                
+        
+        if self.debug: print 'result  = ' + str(result)
+               
         self.check_response(result)
         self.assertEquals(result['connect'], False, 'connect attribute is not True')
 
@@ -196,6 +222,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         del self.required_parameters['first_name']
         result = self.postToCap(self.required_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], False, 'connect attribute is not True')
@@ -206,7 +234,9 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.required_parameters['first_name'] = None
 
         result = self.postToCap(self.required_parameters)
-                
+        
+        if self.debug: print 'result  = ' + str(result)
+               
         self.check_response(result)
         self.assertEquals(result['connect'], False, 'connect attribute is not True')
         
@@ -215,7 +245,9 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         del self.required_parameters['last_name']
         result = self.postToCap(self.required_parameters)
-                
+        
+        if self.debug: print 'result  = ' + str(result)
+               
         self.check_response(result)
         self.assertEquals(result['connect'], False, 'connect attribute is not True')
 
@@ -225,6 +257,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.required_parameters['last_name'] = None
 
         result = self.postToCap(self.required_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], False, 'connect attribute is not True')
@@ -235,7 +269,9 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.full_parameters['age_verified'] = 'Y'
 
         result = self.postToCap(self.full_parameters)
-                
+
+        if self.debug: print 'result  = ' + str(result)
+                        
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is True')
 
@@ -245,6 +281,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.full_parameters['age_verified'] = True
 
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True')        
@@ -255,6 +293,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.full_parameters['agent_access'] = True
 
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True')  
@@ -262,19 +302,23 @@ class RezAvatarRequestTests(unittest.TestCase):
     def test_rez_avatar_request_god_level(self):
         """ checks for proper response when agent_access is 0 """
         
-        self.full_parameters['agent_access'] = 0
+        self.full_parameters['god_level'] = self.config.get(self.test_setup_config_name, 'god_level_0')
 
         result = self.postToCap(self.full_parameters)
-                
+        
+        if self.debug: print 'result  = ' + str(result)
+               
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True')  
 
     def test_rez_avatar_request_identified_T(self):
         """ checks for proper response when identified is True """
         
-        self.full_parameters['identified'] = True
+        self.full_parameters['identified'] = self.config.get(self.test_setup_config_name, 'identified_true')
 
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True') 
@@ -282,9 +326,11 @@ class RezAvatarRequestTests(unittest.TestCase):
     def test_rez_avatar_request_transacted_T(self):
         """ checks for proper response when transacted is True """
         
-        self.full_parameters['transacted'] = True
+        self.full_parameters['transacted'] = self.config.get(self.test_setup_config_name, 'transacted_true')
 
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True') 
@@ -295,16 +341,20 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.full_parameters['limited_to_estate'] = 99999999999
 
         result = self.postToCap(self.full_parameters)
-                
+        
+        if self.debug: print 'result  = ' + str(result)
+               
         self.check_response(result)
-        self.assertEquals(result['connect'], True, 'connect attribute is not True')   
+        self.assertEquals(result['connect'], False, 'connect attribute is True')   
 
     def test_rez_avatar_request_sim_access_PG(self):
         """ checks for proper response when sim_access is set to PG """
         
-        self.full_parameters['sim_access'] = 'PG'
+        self.full_parameters['sim_access'] = self.config.get(self.test_setup_config_name, 'sim_access_PG')
 
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True') 
@@ -312,9 +362,11 @@ class RezAvatarRequestTests(unittest.TestCase):
     def test_rez_avatar_request_sim_access_PG(self):
         """ checks for proper response when sim_access is set to Mature """
         
-        self.full_parameters['sim_access'] = 'Mature'
+        self.full_parameters['sim_access'] = self.config.get(self.test_setup_config_name, 'sim_access_Mature')
 
         result = self.postToCap(self.full_parameters)
+        
+        if self.debug: print 'result  = ' + str(result)
                 
         self.check_response(result)
         self.assertEquals(result['connect'], True, 'connect attribute is not True')                                                              

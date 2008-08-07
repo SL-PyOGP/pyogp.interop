@@ -95,7 +95,7 @@ class Agent():
         # currently, we don't disconnect from the sim, b/c we never really connect there, so let's just sleep for a mo or 10 so the AD timesout
         # another way to go about it would be to call derez?
         # would love to put a flag on the agent that indicates whether they logged in or not, so we could conditionally call logout in the tests
-        time.sleep(15)
+        time.sleep(30)
     
     
     def postToLoginUri(self, firstname, lastname, password, login_uri):

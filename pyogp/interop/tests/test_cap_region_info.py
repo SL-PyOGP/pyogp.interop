@@ -10,6 +10,7 @@ from pyogp.lib.base.caps import Capability
 from helpers import Agent
 
 '''
+NOT YET AVAILABLE (documented, not implemented)
 
 write tests against region/info, a region domain cap
 http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Region_Information_.28Resource_Class.29
@@ -24,15 +25,15 @@ class testCapRegionInfo(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        self.firstname = config.get('test_cap_region_info_setup', 'firstname')
-        self.lastname = config.get('test_cap_region_info_setup', 'lastname')
-        self.password = config.get('test_cap_region_info_setup', 'password')
-        self.login_uri = config.get('test_cap_region_info_setup', 'login_uri')
-        self.region_uri = config.get('test_cap_region_info_setup', 'region_uri')
+        self.firstname = config.get('test_interop_account', 'firstname')
+        self.lastname = config.get('test_interop_account', 'lastname')
+        self.password = config.get('test_interop_account', 'password')
+        self.login_uri = config.get('test_interop_account', 'login_uri')
+        
+        self.region_uri = config.get('test_interop_regions', 'linden_start_region_uri')
        
         self.client = Agent()
-        # incomplete until a method for retrieving the cap and calling the URL via GET is available
-        # will want to post the request for the region/info cap from the sim, and GET it
+        # will want to post the request for the region/info cap to the sim seedcap, and GET it
         
     def tearDown(self):
 
@@ -72,6 +73,7 @@ class testCapRegionInfo(unittest.TestCase):
 ###################################
     # region/info is implemented, no reason to write tests for it
 
+'''
     def test_cap_region_info_base(self):
         """ agent/info cap returns the right reponse with the right inputs params """
         
@@ -89,7 +91,7 @@ class testCapRegionInfo(unittest.TestCase):
 
         print 'Until we can request the url for region/info, we cannot test this' 
         pass
-
+'''
     # etc etc
 
 

@@ -24,11 +24,12 @@ class testCapAgentInfo(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        self.firstname = config.get('test_cap_agent_info_setup', 'firstname')
-        self.lastname = config.get('test_cap_agent_info_setup', 'lastname')
-        self.password = config.get('test_cap_agent_info_setup', 'password')
-        self.login_uri = config.get('test_cap_agent_info_setup', 'login_uri')
-        self.region_uri = config.get('test_cap_agent_info_setup', 'region_uri')
+        self.firstname = config.get('test_interop_account', 'firstname')
+        self.lastname = config.get('test_interop_account', 'lastname')
+        self.password = config.get('test_interop_account', 'password')
+        self.login_uri = config.get('test_interop_account', 'login_uri')
+        
+        self.region_uri = config.get('test_interop_regions', 'linden_start_region_uri')
         
         self.client = Agent()
         self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)

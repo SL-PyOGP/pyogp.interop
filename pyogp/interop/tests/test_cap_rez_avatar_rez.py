@@ -20,13 +20,15 @@ class RezAvatarRezTests(unittest.TestCase):
     def setUp(self):
         init()
         
-        config = ConfigParser.ConfigParser()
-        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        self.config = ConfigParser.ConfigParser()
+        self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        
+        self.test_setup_config_name = 'test_rez_avatar_rez'
         
         # grab the testdata from testconfig.cfg
-        self.agent_id = config.get('test_rez_avatar_rez_setup', 'agent_id')
-        self.region_uri = config.get('test_rez_avatar_rez_setup', 'region_uri')
-        self.position = config.get('test_rez_avatar_rez_setup', 'position')
+        self.agent_id = self.config.get(self.test_setup_config_name, 'agent_id')
+        self.region_uri = self.config.get('test_interop_regions', 'linden_start_region_uri')
+        self.position = self.config.get(self.test_setup_config_name, 'position')
         
         # we can't request this cap, but we can craft it ourselves        
         self.rez_avatar_url  = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
@@ -34,17 +36,17 @@ class RezAvatarRezTests(unittest.TestCase):
         # Required parameters: { circuit_code: int, position: [x real ,y real, z real, ], secure_session_id: uuid , session_id: uuid , avatar_data: TBD }
         # Note the TBD on avatar data
         self.required_parameters = { 
-           'circuit_code' : config.get('test_rez_avatar_rez_setup', 'circuit_code'),
+           'circuit_code' : self.config.get(self.test_setup_config_name, 'circuit_code'),
            'position' : self.position,
-           'secure_session_id' : config.get('test_rez_avatar_rez_setup', 'secure_session_id'),
-           'session_id' : config.get('test_rez_avatar_rez_setup', 'session_id')
+           'secure_session_id' : self.config.get(self.test_setup_config_name, 'secure_session_id'),
+           'session_id' : self.config.get(self.test_setup_config_name, 'session_id')
            }
            
         self.full_parameters = {
-           'circuit_code' : config.get('test_rez_avatar_rez_setup', 'circuit_code'),
+           'circuit_code' : self.config.get(self.test_setup_config_name, 'circuit_code'),
            'position' : self.position,
-           'secure_session_id' : config.get('test_rez_avatar_rez_setup', 'secure_session_id'),
-           'session_id' : config.get('test_rez_avatar_rez_setup', 'session_id'),
+           'secure_session_id' : self.config.get(self.test_setup_config_name, 'secure_session_id'),
+           'session_id' : self.config.get(self.test_setup_config_name, 'session_id'),
            'avatar_data' : None
            }
        
@@ -54,12 +56,17 @@ class RezAvatarRezTests(unittest.TestCase):
         #     We can work jsut with a rez_avatar_url and post params
         self.capability = Capability('rez_avatar/rez', self.rez_avatar_url)
 
+        if self.debug: print 'rez_avatar/rez url = ' + self.rez_avatar_url
+
     def tearDown(self):
         
         # we don't login, don't need to logout :)
         pass
     
     def postToCap(self, arguments):
+
+        if self.debug: print 'posting to cap = ' + str(arguments)
+        
         try:
             result = self.capability.POST(arguments)
         except Exception, e:
@@ -85,6 +92,8 @@ class RezAvatarRezTests(unittest.TestCase):
 
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+
         self.check_response(result)
         self.assertEquals(result['connect'], True)
 
@@ -93,6 +102,8 @@ class RezAvatarRezTests(unittest.TestCase):
 
         result = self.postToCap(self.full_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+
         self.check_response(result)
         self.assertEquals(result['connect'], True)
     
@@ -100,12 +111,14 @@ class RezAvatarRezTests(unittest.TestCase):
     
         result = self.postToCap(self.required_parameters)
         
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         # Successful response: { connect: "True" look_at: [x real ,y real, z real, ] , position: [x real ,y real, z real, ], rez_avatar/derez: cap }
         self.assert_(result.has_key('connect') and
                      result.has_key('look_at') and
                      result.has_key('position') and
-                     result.has_key('rez_avatar/derez'), 'successful cap post is missing parameters')
+                     result.has_key('rez_avatar/derez'), 'successful cap post is missing parameters in the response')
 
     def test_cap_rez_avatar_rez_success_keys(self):
         """ test that a success response contains no additional keys """
@@ -113,6 +126,8 @@ class RezAvatarRezTests(unittest.TestCase):
         result = self.postToCap(self.required_parameters)
         
         self.check_response(result)
+
+        if self.debug: print 'result  = ' + str(result)
         
         valid_keys = ['connect', 'look_at', 'position', 'rez_avatar/derez']
         fail = 0 
@@ -131,6 +146,8 @@ class RezAvatarRezTests(unittest.TestCase):
         """ verify position values are within range """
 
         result = self.postToCap(self.required_parameters)
+
+        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)
         # LL convention. OpenSim too atm?
@@ -143,6 +160,8 @@ class RezAvatarRezTests(unittest.TestCase):
 
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], True)
                      
@@ -151,6 +170,8 @@ class RezAvatarRezTests(unittest.TestCase):
 
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         self.assert_(result.has_key('rez_avatar/derez'))
         
@@ -166,6 +187,8 @@ class RezAvatarRezTests(unittest.TestCase):
            
         result = self.postToCap(empty_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         self.assertEquals(result['connect'], False)
     
@@ -181,6 +204,8 @@ class RezAvatarRezTests(unittest.TestCase):
 
         result = self.postToCap(empty_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         # Failure response: { connect: False, redirect: False, resethome: False, message: string } 
         self.assert_(result.has_key('connect') and
                      result.has_key('redirect') and
@@ -194,6 +219,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         self.assertEquals(result['message'], 'No valid circuit code.', 'invalid message value')
@@ -205,6 +232,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         #self.assertEquals(result['message'], '', 'invalid message value') 
@@ -216,6 +245,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         #self.assertEquals(result['message'], '', 'invalid message value')
@@ -227,6 +258,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         self.assertEquals(result['message'], 'No valid session id.', 'invalid message value')
@@ -249,6 +282,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         #self.assertEquals(result['message'], '', 'invalid message value') 
@@ -260,6 +295,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         #self.assertEquals(result['message'], '', 'invalid message value')
@@ -271,6 +308,8 @@ class RezAvatarRezTests(unittest.TestCase):
         
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
         self.assertEquals(result['message'], 'No valid session id.', 'invalid message value')         

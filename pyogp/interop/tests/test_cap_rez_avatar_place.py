@@ -24,12 +24,15 @@ class RezAvatarPlaceTests(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        self.firstname = config.get('test_rez_avatar_place_setup', 'firstname')
-        self.lastname = config.get('test_rez_avatar_place_setup', 'lastname')
-        self.password = config.get('test_rez_avatar_place_setup', 'password')
-        self.login_uri = config.get('test_rez_avatar_place_setup', 'login_uri')
-        self.region_uri = config.get('test_rez_avatar_place_setup', 'region_uri')
-        self.position = config.get('test_rez_avatar_place_setup', 'position')
+        self.firstname = config.get('test_interop_account', 'firstname')
+        self.lastname = config.get('test_interop_account', 'lastname')
+        self.password = config.get('test_interop_account', 'password')
+        self.login_uri = config.get('test_interop_account', 'login_uri')
+        self.agent_id = config.get('test_interop_account', 'agent_id') # this can come from self.client.id once agent/info is working
+        
+        self.region_uri = config.get('test_interop_regions', 'linden_start_region_uri') 
+           
+        self.position = config.get('test_rez_avatar_place', 'position')
         
         # required_parameters: { region_url: url string, position: [x real, y real, z real, ] }
         self.required_parameters = {
@@ -44,7 +47,9 @@ class RezAvatarPlaceTests(unittest.TestCase):
         
         # initialize the cap object for use in postToCap
         self.capability = Capability('rez_avatar/place', self.caps['rez_avatar/place'].public_url)
-       
+
+        if self.debug: print 'rez_avatar/place url = ' + self.caps['rez_avatar/place'].public_url
+              
     def tearDown(self):
         
         self.client.logout()
@@ -56,6 +61,7 @@ class RezAvatarPlaceTests(unittest.TestCase):
         
     def postToCap(self, arguments):
         
+        if self.debug: print 'posting to cap = ' + str(arguments)
 
         try:
             result = self.capability.POST(arguments)
@@ -91,6 +97,8 @@ class RezAvatarPlaceTests(unittest.TestCase):
 
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_response(result)
         self.assertEquals(result['connect'], True)
  
@@ -110,11 +118,14 @@ class RezAvatarPlaceTests(unittest.TestCase):
     def test_rez_avatar_place_nocontent(self):
         """ agent is allowed to rez """
 
-        result = self.postToCap({'region_url' : '', 'position' : ''})
+        result = self.postToCap({})
 
-        print result
+        if self.debug: print 'result  = ' + str(result)
+        
+        # print result
         # the library is trapping the 400, perhaps it should be allowed to filter here for testing? 
         self.check_response(result)
+        #self.assertRaises(HTTPError, self.postToCap(self.required_parameters))
 
     def test_rez_avatar_place_invalid_region_uri(self):
         """ agent is allowed to rez """
@@ -122,9 +133,11 @@ class RezAvatarPlaceTests(unittest.TestCase):
         self.required_parameters['region_url'] = 'http://imnotreal.net'
         result = self.postToCap(self.required_parameters)
 
-        print result
+        if self.debug: print 'result  = ' + str(result)
+        
         # the library is trapping the 400, perhaps it should be allowed to filter here for testing? 
         self.check_response(result)
+        #self.assertRaises(HTTPError, self.postToCap(self.required_parameters))
 
     def test_cap_rez_avatar_place_success_keys(self):
         """ test that a success response contains no additional keys """
@@ -132,7 +145,9 @@ class RezAvatarPlaceTests(unittest.TestCase):
         result = self.postToCap(self.required_parameters)
         
         self.check_response(result)
-        
+
+        if self.debug: print 'result  = ' + str(result)
+                
         valid_keys = ['connect', 'look_at', 'position', 'seed_capability']
         fail = 0 
         extra_keys = ''

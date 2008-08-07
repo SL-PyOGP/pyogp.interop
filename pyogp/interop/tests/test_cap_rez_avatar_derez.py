@@ -27,17 +27,21 @@ class RezAvatarDerezTest(unittest.TestCase):
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
         test_setup_config_name = 'test_rez_avatar_derez_setup'
+        
+        self.firstname = config.get('test_interop_account', 'firstname')
+        self.lastname = config.get('test_interop_account', 'lastname')
+        self.password = config.get('test_interop_account', 'password')
+        self.login_uri = config.get('test_interop_account', 'login_uri')
+        self.agent_id = config.get('test_interop_account', 'agent_id') # this can come from self.client.id once agent/info is working
+        
+        self.source_region_uri = config.get('test_interop_regions', 'linden_start_region_uri')        
+        self.target_region_uri = config.get('test_interop_regions', 'linden_target_region_uri')
+        
+        self.position = config.get('test_rez_avatar_derez', 'position') 
 
-        # grab the testdata from testconfig.cfg
-        self.agent_id = config.get(test_setup_config_name, 'agent_id')
-        self.source_region_uri = config.get(test_setup_config_name, 'source_region_uri')
-        self.target_region_uri = config.get(test_setup_config_name, 'target_region_uri')
-        self.position = config.get(test_setup_config_name, 'position')
-        #self.region_uri = config.get(test_setup_config_name, 'region_uri')
-        self.firstname = config.get(test_setup_config_name, 'firstname')
-        self.lastname = config.get(test_setup_config_name, 'lastname')
-        self.password = config.get(test_setup_config_name, 'password')
-        self.login_uri = config.get(test_setup_config_name, 'login_uri')
+        # agent has to rez on the sim before the derez cap can be called
+        self.client = Agent()
+        self.client.login(self.firstname, self.lastname, self.password, self.login_uri, self.region_uri)
         
         # we can't request these caps as a client, but we can craft them ourselves
         self.rez_avatar_url = self.target_region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
@@ -49,11 +53,9 @@ class RezAvatarDerezTest(unittest.TestCase):
             'position' : self.position
             }
         
-        self.capability = Capability('rez_avatar/derez', self.derez_avatar_url)
+        self.capability = Capability('rez_avatar/derez', self.derez_avatar_url)              
 
-        # agent has to rez on the sim before the derez cap can be called
-        self.client = Agent()
-        self.client.login(self.firstname, self.lastname, self.password, self.login_uri, self.region_uri)
+        if self.debug: print 'rez_avatar/derez url = ' + self.derez_avatar_url
         
     def tearDown(self):
         pass
@@ -62,6 +64,8 @@ class RezAvatarDerezTest(unittest.TestCase):
 
 
     def postToCap(self, arguments):
+
+        if self.debug: print 'posting to cap = ' + str(arguments)
       
         try:
             result = self.capability.POST(arguments)
@@ -96,6 +100,8 @@ class RezAvatarDerezTest(unittest.TestCase):
         '''
         result = self.postToCap(self.required_parameters)
 
+        if self.debug: print 'result  = ' + str(result)
+        
         self.check_successful_response(result)
         self.assertEquals(result['connect'], True)
         '''
