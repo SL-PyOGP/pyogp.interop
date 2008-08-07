@@ -29,7 +29,7 @@ class testCapAgentInfo(unittest.TestCase):
         self.password = config.get('test_interop_account', 'password')
         self.login_uri = config.get('test_interop_account', 'login_uri')
         
-        self.region_uri = config.get('test_interop_regions', 'linden_start_region_uri')
+        self.region_uri = config.get('test_interop_regions', 'start_region_uri')
         
         self.client = Agent()
         self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)

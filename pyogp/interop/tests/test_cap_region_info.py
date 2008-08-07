@@ -30,7 +30,7 @@ class testCapRegionInfo(unittest.TestCase):
         self.password = config.get('test_interop_account', 'password')
         self.login_uri = config.get('test_interop_account', 'login_uri')
         
-        self.region_uri = config.get('test_interop_regions', 'linden_start_region_uri')
+        self.region_uri = config.get('test_interop_regions', 'start_region_uri')
        
         self.client = Agent()
         # will want to post the request for the region/info cap to the sim seedcap, and GET it

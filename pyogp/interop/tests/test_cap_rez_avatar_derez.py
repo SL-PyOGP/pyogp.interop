@@ -41,7 +41,7 @@ class RezAvatarDerezTest(unittest.TestCase):
 
         # agent has to rez on the sim before the derez cap can be called
         self.client = Agent()
-        self.client.login(self.firstname, self.lastname, self.password, self.login_uri, self.region_uri)
+        self.client.login(self.firstname, self.lastname, self.password, self.login_uri, self.source_region_uri)
         
         # we can't request these caps as a client, but we can craft them ourselves
         self.rez_avatar_url = self.target_region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
