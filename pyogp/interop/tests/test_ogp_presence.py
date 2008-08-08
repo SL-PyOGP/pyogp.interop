@@ -134,26 +134,6 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.add_data('CircuitCode', avatar.region.details['circuit_code'], \
                                 MsgType.MVT_U32)
         self.messenger.send_reliable(self.host, 0)
-        
-        """while True:
-            recv_message = ''
-            if self.messenger.receive_check() == True:
-                recv_message = self.messenger.reader.current_msg
-                print 'Message received: ' + recv_message.name
-                break
-            else:
-                print 'No message'
-        
-        # To do: this test is failing, though the ad recieved the request. the derez avatar call fails....
-        #time.sleep(10)
-      
-        tp_region = Region(self.target_region_uri)
-        place = IPlaceAvatar(agentdomain)
-
-        avatar = place(tp_region)        
-
-        self.host = Host(avatar.region.details['sim_ip'],
-                    avatar.region.details['sim_port'])"""
 
         #SENDS UUIDNameRequest
         self.messenger.new_message("UUIDNameRequest")
@@ -177,8 +157,7 @@ class OGPTeleportTest(unittest.TestCase):
                     self.send_region_handshake_reply(self.agent_id, self.session_id)
                 elif recv_message.name == 'StartPingCheck':
                     self.send_complete_ping_check(last_ping)
-                    last_ping += 1
-                    
+                    last_ping += 1                    
                 
             else:
                 print 'No message'
