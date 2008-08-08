@@ -135,7 +135,7 @@ class OGPTeleportTest(unittest.TestCase):
                                 MsgType.MVT_U32)
         self.messenger.send_reliable(self.host, 0)
         
-        while True:
+        """while True:
             recv_message = ''
             if self.messenger.receive_check() == True:
                 recv_message = self.messenger.reader.current_msg
@@ -153,7 +153,41 @@ class OGPTeleportTest(unittest.TestCase):
         avatar = place(tp_region)        
 
         self.host = Host(avatar.region.details['sim_ip'],
-                    avatar.region.details['sim_port'])
+                    avatar.region.details['sim_port'])"""
+
+        #SENDS UUIDNameRequest
+        self.messenger.new_message("UUIDNameRequest")
+        self.messenger.next_block("UUIDNameBlock")
+        self.messenger.add_data("ID", \
+                                uuid.UUID(self.agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.send_message(self.host)
+        
+        print "Entering loop"
+        last_ping = 0
+        while True:
+            recv_message = ''
+            if self.messenger.receive_check() == True:
+                recv_message = self.messenger.reader.current_msg
+                print 'Received: ' + recv_message.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
+                                                  str(self.messenger.udp_client.sender.port)
+
+                #MESSAGE HANDLERS
+                if recv_message.name == 'RegionHandshake':
+                    self.send_region_handshake_reply(self.agent_id, self.session_id)
+                elif recv_message.name == 'StartPingCheck':
+                    self.send_complete_ping_check(last_ping)
+                    last_ping += 1
+                    
+                
+            else:
+                print 'No message'
+
+            if self.messenger.has_unacked():
+                print 'Acking'
+                self.messenger.process_acks()
+                self.send_agent_update(self.agent_id, self.session_id)
+
        
     def tearDown(self):
         # essentially logout by deleting presence... etc.
@@ -167,6 +201,69 @@ class OGPTeleportTest(unittest.TestCase):
                                 MsgType.MVT_LLUUID)
         self.messenger.send_message(self.host)
 
+    def send_agent_update(self, agent_id, session_id):
+        self.messenger.new_message("AgentUpdate")
+        self.messenger.next_block("AgentData")
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(session_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('BodyRotation', \
+                                (0.0,0.0,0.0,0.0), \
+                                MsgType.MVT_LLQuaternion)
+        self.messenger.add_data('HeadRotation', \
+                                (0.0,0.0,0.0,0.0), \
+                                MsgType.MVT_LLQuaternion)
+        self.messenger.add_data('State', \
+                                0x00, \
+                                MsgType.MVT_U8)
+        self.messenger.add_data('CameraCenter', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('CameraAtAxis', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('CameraLeftAxis', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('CameraUpAxis', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('Far', \
+                                0.0, \
+                                MsgType.MVT_F32)
+        self.messenger.add_data('ControlFlags', \
+                                0x00, \
+                                MsgType.MVT_U32)
+        self.messenger.add_data('Flags', \
+                                0x00, \
+                                MsgType.MVT_U8)
+        self.messenger.send_message(self.host)
+
+    def send_region_handshake_reply(self, agent_id, session_id):
+        self.messenger.new_message("RegionHandshakeReply")
+        self.messenger.next_block("AgentData")
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(session_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.next_block("RegionInfo")
+        self.messenger.add_data('Flags', \
+                                0x00, \
+                                MsgType.MVT_U32)
+        self.messenger.send_message(self.host)
+    
+    def send_complete_ping_check(self, ping):
+        self.messenger.new_message("CompletePingCheck")
+        self.messenger.next_block("PingID")
+        self.messenger.add_data('PingID', \
+                                ping, \
+                                MsgType.MVT_U8)
+        self.messenger.send_message(self.host)
 
 def test_suite():
     from unittest import TestSuite, makeSuite
