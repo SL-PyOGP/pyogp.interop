@@ -31,6 +31,9 @@ class OGPTeleportTest(unittest.TestCase):
     def setUp(self):
         init() # initialize the framework        
 
+        self.agent_id = ''
+        self.session_id = ''
+
         # initialize the config
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -82,7 +85,8 @@ class OGPTeleportTest(unittest.TestCase):
         assert avatar.region.details['secure_session_id'] != None or avatar.region.details['secure_session_id'] != {}, "Rez_avatar/place returned no secure_session_id" 
         assert avatar.region.details['circuit_code'] != None or avatar.region.details['circuit_code'] != {}, "Rez_avatar/place returned no cicuit_code"
 
-        agent_id = avatar.region.details['agent_id']
+        self.agent_id = avatar.region.details['agent_id']
+        self.session_id = avatar.region.details['session_id']
         
         #begin UDP communication
         self.host = Host(avatar.region.details['sim_ip'],
@@ -109,10 +113,10 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.add_data('Code', avatar.region.details['circuit_code'], \
                                 MsgType.MVT_U32)
         self.messenger.add_data('SessionID', \
-                                uuid.UUID(avatar.region.details['session_id']), \
+                                uuid.UUID(self.session_id), \
                                 MsgType.MVT_LLUUID)
         self.messenger.add_data('ID', \
-                                uuid.UUID(agent_id), \
+                                uuid.UUID(self.agent_id), \
                                 MsgType.MVT_LLUUID)
         self.messenger.send_reliable(self.host, 0)
 
@@ -122,15 +126,15 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.new_message("CompleteAgentMovement")
         self.messenger.next_block("AgentData")
         self.messenger.add_data('AgentID', \
-                                uuid.UUID(agent_id), \
+                                uuid.UUID(self.agent_id), \
                                 MsgType.MVT_LLUUID)
         self.messenger.add_data('SessionID', \
-                                uuid.UUID(avatar.region.details['session_id']), \
+                                uuid.UUID(self.session_id), \
                                 MsgType.MVT_LLUUID)
         self.messenger.add_data('CircuitCode', avatar.region.details['circuit_code'], \
                                 MsgType.MVT_U32)
         self.messenger.send_reliable(self.host, 0)
-        
+
         while True:
             recv_message = ''
             if self.messenger.receive_check() == True:
@@ -139,7 +143,7 @@ class OGPTeleportTest(unittest.TestCase):
                 break
             else:
                 print 'No message'
-
+        
         # To do: this test is failing, though the ad recieved the request. the derez avatar call fails....
         #time.sleep(10)
       
@@ -147,10 +151,25 @@ class OGPTeleportTest(unittest.TestCase):
         place = IPlaceAvatar(agentdomain)
 
         avatar = place(tp_region)        
+
+        print "Entering loop"
+        while True:
+            recv_message = ''
+            if self.messenger.receive_check() == True:
+                recv_message = self.messenger.reader.current_msg
+                print 'Message received: ' + recv_message.name
+            else:
+                print 'No message'
+
+            if self.messenger.has_unacked():
+                print 'Acking'
+                self.messenger.process_acks()
+                self.send_agent_update(self.agent_id, self.session_id)
+
        
     def tearDown(self):
         # essentially logout by deleting presence... etc.
-        """self.messenger.new_message("LogoutRequest")
+        self.messenger.new_message("LogoutRequest")
         self.messenger.next_block("AgentData")
         self.messenger.add_data('AgentID', \
                                 uuid.UUID(agent_id), \
@@ -158,9 +177,50 @@ class OGPTeleportTest(unittest.TestCase):
         self.messenger.add_data('SessionID', \
                                 uuid.UUID(avatar.region.details['session_id']), \
                                 MsgType.MVT_LLUUID)
-        self.messenger.send_message(self.host, 0)"""
+        self.messenger.send_message(self.host)
 
-        
+    def send_agent_update(self, agent_id, session_id):
+        self.messenger.new_message("AgentUpdate")
+        self.messenger.next_block("AgentData")
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(session_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('BodyRotation', \
+                                (0.0,0.0,0.0,0.0), \
+                                MsgType.MVT_LLQuaternion)
+        self.messenger.add_data('HeadRotation', \
+                                (0.0,0.0,0.0,0.0), \
+                                MsgType.MVT_LLQuaternion)
+        self.messenger.add_data('State', \
+                                0x00, \
+                                MsgType.MVT_U8)
+        self.messenger.add_data('CameraCenter', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('CameraAtAxis', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('CameraLeftAxis', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('CameraUpAxis', \
+                                (0.0,0.0,0.0), \
+                                MsgType.MVT_LLVector3)
+        self.messenger.add_data('Far', \
+                                0.0, \
+                                MsgType.MVT_F32)
+        self.messenger.add_data('ControlFlags', \
+                                0x00, \
+                                MsgType.MVT_U32)
+        self.messenger.add_data('Flags', \
+                                0x00, \
+                                MsgType.MVT_U8)
+        self.messenger.send_message(self.host)
+
+    
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
