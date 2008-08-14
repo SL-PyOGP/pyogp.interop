@@ -166,12 +166,8 @@ class OGPTeleportTest(unittest.TestCase):
                 elif recv_message.name == 'StartPingCheck':
                     self.send_complete_ping_check(last_ping)
                     last_ping += 1                    
-                
-            else:
-                print 'No message'
 
             if self.messenger.has_unacked():
-                print 'Acking'
                 self.messenger.process_acks()
     
             current_time = time.time()
@@ -269,9 +265,15 @@ def run_ad_eq(ad_event_queue):
 
 def run_sim_eqg(sim_event_queue):
     while True:
-        result = sim_event_queue()
-        print "Sim event queue returned: "
-        pprint.pprint(result)
+        try:
+            result = sim_event_queue()
+            print "Sim event queue returned: "
+            pprint.pprint(result)
+        except Exception, e:
+            print "Sim had no events"
+            #just means nothing to get
+            pass
+            
 
 def test_suite():
     from unittest import TestSuite, makeSuite
