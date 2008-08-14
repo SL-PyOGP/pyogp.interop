@@ -3,6 +3,7 @@ import ConfigParser
 from pkg_resources import resource_stream
 import time
 import uuid
+import pprint
 
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
@@ -143,14 +144,21 @@ class OGPTeleportTest(unittest.TestCase):
         last_ping = 0
         ad_event_queue = IEventQueueGet(agentdomain)
         sim_event_queue = IEventQueueGet(region)
+
+        from threading import Thread
+        ad_queue_thread = Thread(target=run_ad_eq, name="Agent Domain event queue", args=(ad_event_queue,))
+        sim_queue_thread = Thread(target=run_sim_eqg, name="Agent Domain event queue", args=(sim_event_queue,))
+        ad_queue_thread.start()
+        sim_queue_thread.start()
+        
         last_time = time.time()
         update_count = 0
         while True:
             recv_message = ''
             if self.messenger.receive_check() == True:
                 recv_message = self.messenger.reader.current_msg
-                print 'Received: ' + recv_message.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
-                                                  str(self.messenger.udp_client.sender.port)
+                """print 'Received: ' + recv_message.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
+                                                  str(self.messenger.udp_client.sender.port)"""
 
                 #MESSAGE HANDLERS
                 if recv_message.name == 'RegionHandshake':
@@ -174,12 +182,6 @@ class OGPTeleportTest(unittest.TestCase):
             if update_count < 10: 
                 update_count += 1
                 self.send_agent_update(self.agent_id, self.session_id)
-
-            #NOW, event queue to sim
-            result = ad_event_queue()
-            print "Agent Domain queue returned: %s" %result
-            result = sim_event_queue()
-            print "Sim event queue returned: %s" %result
        
     def tearDown(self):
         # essentially logout by deleting presence... etc.
@@ -256,6 +258,20 @@ class OGPTeleportTest(unittest.TestCase):
                                 ping, \
                                 MsgType.MVT_U8)
         self.messenger.send_message(self.host)
+
+#for threading
+def run_ad_eq(ad_event_queue):
+    #NOW, event queue to sim
+    while True:
+        result = ad_event_queue()
+        print "Agent Domain queue returned: "
+        pprint.pprint(result)
+
+def run_sim_eqg(sim_event_queue):
+    while True:
+        result = sim_event_queue()
+        print "Sim event queue returned: "
+        pprint.pprint(result)
 
 def test_suite():
     from unittest import TestSuite, makeSuite
