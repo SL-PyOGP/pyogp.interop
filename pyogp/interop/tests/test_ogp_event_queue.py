@@ -127,7 +127,18 @@ class OGPTeleportTest(unittest.TestCase):
                                 uuid.UUID(self.agent_id), \
                                 MsgType.MVT_LLUUID)
         self.messenger.send_message(self.host)
-        
+
+        #SENDS AgentDataUpdateRequest
+        self.messenger.new_message("AgentDataUpdateRequest")
+        self.messenger.next_block("AgentData")
+        self.messenger.add_data('AgentID', \
+                                uuid.UUID(self.agent_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.add_data('SessionID', \
+                                uuid.UUID(self.session_id), \
+                                MsgType.MVT_LLUUID)
+        self.messenger.send_message(self.host)
+
         print "Entering loop"
         last_ping = 0
         ad_event_queue = IEventQueueGet(agentdomain)
