@@ -34,6 +34,8 @@ globals()["agentFlagSent"] = 0x00000000
 #global controlFlags = 0x00000000
 #global agentFlagSent = controlFlags
 
+STOP_MOVING = 0x00004000
+
 NUDGE_FORWARD = 0x00080000
 NUDGE_BACKWARD = 0x00100000
 NUDGE_LEFT = 0x00200000
@@ -338,6 +340,10 @@ def run_input_check():
                 
             print kk
         else:
+            #SPACE HALTS THE AGENT
+            if c == ' ':
+                globals()["controlFlags"] = STOP_MOVING
+
             print repr(c)    
             
 
