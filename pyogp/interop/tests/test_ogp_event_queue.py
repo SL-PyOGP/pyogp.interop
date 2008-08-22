@@ -153,6 +153,8 @@ class OGPTeleportTest(unittest.TestCase):
         
         last_time = time.time()
         update_count = 0
+        self.send_agent_update(self.agent_id, self.session_id, 0x00080000)
+
         while True:
             recv_message = ''
             if self.messenger.receive_check() == True:
@@ -177,7 +179,7 @@ class OGPTeleportTest(unittest.TestCase):
             #update 10 times a second max
             if update_count < 10: 
                 update_count += 1
-                self.send_agent_update(self.agent_id, self.session_id)
+                self.send_agent_update(self.agent_id, self.session_id, 0x00000001 | 0x00000400)
        
     def tearDown(self):
         # essentially logout by deleting presence... etc.
@@ -191,7 +193,7 @@ class OGPTeleportTest(unittest.TestCase):
                                 MsgType.MVT_LLUUID)
         self.messenger.send_message(self.host)
 
-    def send_agent_update(self, agent_id, session_id):
+    def send_agent_update(self, agent_id, session_id, control_flag):
         self.messenger.new_message("AgentUpdate")
         self.messenger.next_block("AgentData")
         self.messenger.add_data('AgentID', \
@@ -201,10 +203,10 @@ class OGPTeleportTest(unittest.TestCase):
                                 uuid.UUID(session_id), \
                                 MsgType.MVT_LLUUID)
         self.messenger.add_data('BodyRotation', \
-                                (0.0,0.0,0.0,0.0), \
+                                (0.0,0.0,0.0), \
                                 MsgType.MVT_LLQuaternion)
         self.messenger.add_data('HeadRotation', \
-                                (0.0,0.0,0.0,0.0), \
+                                (0.0,0.0,0.0), \
                                 MsgType.MVT_LLQuaternion)
         self.messenger.add_data('State', \
                                 0x00, \
@@ -213,19 +215,19 @@ class OGPTeleportTest(unittest.TestCase):
                                 (0.0,0.0,0.0), \
                                 MsgType.MVT_LLVector3)
         self.messenger.add_data('CameraAtAxis', \
-                                (0.0,0.0,0.0), \
+                                (1.0,0.0,0.0), \
                                 MsgType.MVT_LLVector3)
         self.messenger.add_data('CameraLeftAxis', \
-                                (0.0,0.0,0.0), \
+                                (0.0,1.0,0.0), \
                                 MsgType.MVT_LLVector3)
         self.messenger.add_data('CameraUpAxis', \
-                                (0.0,0.0,0.0), \
+                                (0.0,0.0,1.0), \
                                 MsgType.MVT_LLVector3)
         self.messenger.add_data('Far', \
-                                0.0, \
+                                1.0, \
                                 MsgType.MVT_F32)
         self.messenger.add_data('ControlFlags', \
-                                0x00, \
+                                control_flag, \
                                 MsgType.MVT_U32)
         self.messenger.add_data('Flags', \
                                 0x00, \
