@@ -29,6 +29,10 @@ from pyogp.lib.base.network.interfaces import IUDPClient
 from pyogp.lib.base.network.net import NetUDPClient
 import teleport_region
 
+#import Tkinter
+#root = Tkinter.Tk()
+import chat_window
+
 globals()["controlFlags"] = 0x00000000
 globals()["agentFlagSent"] = 0x00000000
 #global controlFlags = 0x00000000
@@ -55,7 +59,6 @@ class OGPTeleportTest(unittest.TestCase):
     def setUp(self):
         init() # initialize the framework        
         provideUtility(NetUDPClient(), IUDPClient)
-
         self.agent_id = ''
         self.session_id = ''
 
@@ -257,6 +260,8 @@ def run_sim_eqg(sim_event_queue):
 
 def run_input_check(teleporter, agentdomain):
     host = teleporter.host
+    pw = chat_window.ChatWindow()
+
     while True:
         #wait til press
         while not msvcrt.kbhit():
@@ -312,6 +317,7 @@ def run_input_check(teleporter, agentdomain):
             elif c == 'u':
                 reload(teleport_region)
                 print 'SAY: ' + teleport_region.chat
+                pw.write(teleport_region.chat + '\n')
                 teleporter.send_chat_message(host,
                                              teleporter.agent_id,
                                              teleporter.session_id,
