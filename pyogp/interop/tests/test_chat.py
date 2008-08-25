@@ -50,6 +50,9 @@ MOVE_BACKWARD = 0x00000002 | 0x00000400
 MOVE_LEFT = 0x00000004 | 0x00000800
 MOVE_RIGHT = 0x00000001 | 0x00000008
 
+#globals()["chat_window"] = chat_window.ChatWindow()
+globals()["message_list"] = []
+
 class OGPTeleportTest(unittest.TestCase):
 
     login_uri = None
@@ -139,7 +142,8 @@ class OGPTeleportTest(unittest.TestCase):
         
         last_time = time.time()
         update_count = 0
-
+        self.cw = chat_window.ChatWindow()
+        
         while True:
             msg_buf, msg_size = self.messenger.udp_client.receive_packet(self.messenger.socket)
             packet = self.messenger.receive_check(self.messenger.udp_client.get_sender(),
@@ -154,6 +158,9 @@ class OGPTeleportTest(unittest.TestCase):
                 elif packet.name == 'StartPingCheck':
                     self.send_complete_ping_check(last_ping)
                     last_ping += 1                    
+                elif packet.name == 'ChatFromSimulator':
+                    print 'CHAT: ' + repr(msg_buf)
+                    self.handle_chat_message(packet)                    
 
             if self.messenger.has_unacked():
                 self.messenger.process_acks()
@@ -166,8 +173,12 @@ class OGPTeleportTest(unittest.TestCase):
             if update_count < 10: 
                 update_count += 1
                 self.send_agent_update(self.agent_id, self.session_id, globals()["controlFlags"])
-                print "Control flags: " + repr(globals()["controlFlags"])
                 globals()["agentFlagSent"] = globals()["controlFlags"]
+
+            if len(globals()["message_list"]) > 0:
+                for message in globals()["message_list"]:
+                    self.cw.write(message)
+                globals()["message_list"] = []
 
     def connect(self, host, region):
         #SENDS UseCircuitCode
@@ -192,6 +203,20 @@ class OGPTeleportTest(unittest.TestCase):
                             )
                       )
         self.messenger.send_message(msg, host)        
+
+    def handle_chat_message(self, packet):
+        print "--------------Chat type-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['ChatType'].data)
+        print "--------------Audible-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['Audible'].data)
+        if packet.message_data.blocks['ChatData'][0].vars['ChatType'].data == 4:
+            return
+        print "FROM: " + str(packet.message_data.blocks['ChatData'][0].vars['FromName'].data)
+        print "MESSAGE: " + str(packet.message_data.blocks['ChatData'][0].vars['Message'].data)
+        message = packet.message_data.blocks['ChatData'][0].vars['FromName'].data
+        message += ': '
+        message += packet.message_data.blocks['ChatData'][0].vars['Message'].data
+        message += '\n'
+        print "Chat message: " + message
+        self.cw.write(message)
        
     def tearDown(self):
         msg = Message('LogoutRequest',
@@ -236,8 +261,12 @@ class OGPTeleportTest(unittest.TestCase):
         msg = Message('ChatFromViewer',
                       Block('AgentData', AgentID=uuid.UUID(agent_id),
                             SessionID=uuid.UUID(self.session_id)),
-                       Block('ChatData', Message=message, Type=1, Channel=0))
+                       Block('ChatData', Message=message, Type=0, Channel=0))
+
+        print "CHATDATA TYPE: " + str(msg.blocks['ChatData'][0].vars['Type'].data)
         self.messenger.send_message(msg, host)
+        globals()["message_list"].append('You: ' + message + '\n')
+
 
 #for threading
 def run_ad_eq(ad_event_queue):
@@ -260,12 +289,14 @@ def run_sim_eqg(sim_event_queue):
 
 def run_input_check(teleporter, agentdomain):
     host = teleporter.host
-    pw = chat_window.ChatWindow()
-
+    
     while True:
+        print "------------WAITINF FOR KEY PRESS---------------"
         #wait til press
         while not msvcrt.kbhit():
             pass
+
+        print "------------GOT KEY PRESS---------------"
 
         c = msvcrt.getch()
         if c == '\xe0':
@@ -316,13 +347,11 @@ def run_input_check(teleporter, agentdomain):
                 teleporter.connect(host, avatar.region)
             elif c == 'u':
                 reload(teleport_region)
-                print 'SAY: ' + teleport_region.chat
-                pw.write(teleport_region.chat + '\n')
+                #cw = globals()["chat_window"]
                 teleporter.send_chat_message(host,
                                              teleporter.agent_id,
                                              teleporter.session_id,
                                              teleport_region.chat)
-
             print repr(c)    
             
 
