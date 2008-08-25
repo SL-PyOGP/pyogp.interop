@@ -3,24 +3,47 @@ import ConfigParser
 from pkg_resources import resource_stream
 import time
 import uuid
+import pprint
+try:
+    import msvcrt #WINDOWS ONLY!
+    canInput = True
+except:
+    print "Trying to import a windows library"
+    canInput = False
 
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
 from pyogp.lib.base.registration import init
 
-from pyogp.lib.base.interfaces import IPlaceAvatar
+from pyogp.lib.base.interfaces import IPlaceAvatar, IEventQueueGet
 
 from pyogp.lib.base.OGPLogin import OGPLogin
-from pyogp.lib.base.message.message_system import MessageSystem
-from pyogp.lib.base.message.circuitdata import Host
+from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
+from pyogp.lib.base.message.message import Message, Block
+from pyogp.lib.base.message.interfaces import IHost, IPacket
 from pyogp.lib.base.message.message_types import MsgType
 
 from zope.component import provideUtility
 from pyogp.lib.base.network.interfaces import IUDPClient
 from pyogp.lib.base.network.net import NetUDPClient
 
-provideUtility(NetUDPClient(), IUDPClient)
+globals()["controlFlags"] = 0x00000000
+globals()["agentFlagSent"] = 0x00000000
+#global controlFlags = 0x00000000
+#global agentFlagSent = controlFlags
+
+STOP_MOVING = 0x00004000
+
+NUDGE_FORWARD = 0x00080000
+NUDGE_BACKWARD = 0x00100000
+NUDGE_LEFT = 0x00200000
+NUDGE_RIGHT = 0x00400000
+
+MOVE_FORWARD = 0x00000001 | 0x00000400
+MOVE_BACKWARD = 0x00000002 | 0x00000400
+MOVE_LEFT = 0x00000004 | 0x00000800
+MOVE_RIGHT = 0x00000001 | 0x00000008
 
 class OGPTeleportTest(unittest.TestCase):
 
@@ -30,6 +53,7 @@ class OGPTeleportTest(unittest.TestCase):
 
     def setUp(self):
         init() # initialize the framework        
+        provideUtility(NetUDPClient(), IUDPClient)
 
         self.agent_id = ''
         self.session_id = ''
@@ -48,7 +72,7 @@ class OGPTeleportTest(unittest.TestCase):
         self.base_lastname = config.get('test_base_teleport', 'lastname')
         self.base_password = config.get('test_base_teleport', 'password')
         #don't need a port, not sure why we have it there yet
-        self.messenger = MessageSystem(None)
+        self.messenger = UDPDispatcher()
         self.host = None
 
     def test_base_teleport(self):
@@ -87,86 +111,197 @@ class OGPTeleportTest(unittest.TestCase):
 
         self.agent_id = avatar.region.details['agent_id']
         self.session_id = avatar.region.details['session_id']
+        self.circuit_code = avatar.region.details['circuit_code']
         
         #begin UDP communication
-        self.host = Host(avatar.region.details['sim_ip'],
-                    avatar.region.details['sim_port'])
+        self.host = IHost((avatar.region.details['sim_ip'],
+                    avatar.region.details['sim_port']))
 
-        #SENDS AddCircuitCode
-        """self.messenger.new_message("AddCircuitCode")
-        self.messenger.next_block("CircuitCode")
-        self.messenger.add_data('Code', avatar.region.details['circuit_code'], \
-                                MsgType.MVT_U32)
-        self.messenger.add_data('SessionID', \
-                                uuid.UUID(avatar.region.details['session_id']), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.add_data('AgentID', \
-                                uuid.UUID(agent_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.send_reliable(self.host, 0)
-        print 'Data: ' + repr(self.messenger.send_buffer)
-        time.sleep(2)"""
+        self.connect(self.host, avatar.region)
+        
+        print "Entering loop"
+        last_ping = 0
+        ad_event_queue = IEventQueueGet(agentdomain)
+        sim_event_queue = IEventQueueGet(region)
 
+        from threading import Thread
+        ad_queue_thread = Thread(target=run_ad_eq, name="Agent Domain event queue", args=(ad_event_queue,))
+        sim_queue_thread = Thread(target=run_sim_eqg, name="Agent Domain event queue", args=(sim_event_queue,))
+        if canInput == True:
+            input_thread = Thread(target=run_input_check, name="Thread to handle input", args=(self, agentdomain))
+            input_thread.start()
+        ad_queue_thread.start()
+        sim_queue_thread.start()
+        
+        last_time = time.time()
+        update_count = 0
+
+        while True:
+            msg_buf, msg_size = self.messenger.udp_client.receive_packet(self.messenger.socket)
+            packet = self.messenger.receive_check(self.messenger.udp_client.get_sender(),
+                                            msg_buf, msg_size)
+            if packet != None:
+                print 'Received: ' + packet.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
+                                                  str(self.messenger.udp_client.sender.port)
+
+                #MESSAGE HANDLERS
+                if packet.name == 'RegionHandshake':
+                    self.send_region_handshake_reply(self.agent_id, self.session_id)
+                elif packet.name == 'StartPingCheck':
+                    self.send_complete_ping_check(last_ping)
+                    last_ping += 1                    
+
+            if self.messenger.has_unacked():
+                self.messenger.process_acks()
+    
+            current_time = time.time()
+            if current_time - last_time >= 1:
+                update_count = 0
+    
+            #update 10 times a second max
+            if update_count < 10: 
+                update_count += 1
+                self.send_agent_update(self.agent_id, self.session_id, globals()["controlFlags"])
+                print "Control flags: " + repr(globals()["controlFlags"])
+                globals()["agentFlagSent"] = globals()["controlFlags"]
+
+    def connect(self, host, region):
         #SENDS UseCircuitCode
-        self.messenger.new_message("UseCircuitCode")
-        self.messenger.next_block("CircuitCode")
-        self.messenger.add_data('Code', avatar.region.details['circuit_code'], \
-                                MsgType.MVT_U32)
-        self.messenger.add_data('SessionID', \
-                                uuid.UUID(self.session_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.add_data('ID', \
-                                uuid.UUID(self.agent_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.send_reliable(self.host, 0)
+        msg = Message('UseCircuitCode',
+                      Block('CircuitCode', Code=self.circuit_code,
+                            SessionID=uuid.UUID(self.session_id),
+                            ID=uuid.UUID(self.agent_id)))
+        self.messenger.send_reliable(msg, host, 0)
 
         time.sleep(1)
 
         #SENDS CompleteAgentMovement
-        self.messenger.new_message("CompleteAgentMovement")
-        self.messenger.next_block("AgentData")
-        self.messenger.add_data('AgentID', \
-                                uuid.UUID(self.agent_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.add_data('SessionID', \
-                                uuid.UUID(self.session_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.add_data('CircuitCode', avatar.region.details['circuit_code'], \
-                                MsgType.MVT_U32)
-        self.messenger.send_reliable(self.host, 0)
-        
-        while True:
-            recv_message = ''
-            if self.messenger.receive_check() == True:
-                recv_message = self.messenger.reader.current_msg
-                print 'Message received: ' + recv_message.name
-                break
-            else:
-                print 'No message'
-        
-        # To do: this test is failing, though the ad recieved the request. the derez avatar call fails....
-        #time.sleep(10)
-      
-        tp_region = Region(self.target_region_uri)
-        place = IPlaceAvatar(agentdomain)
+        msg = Message('CompleteAgentMovement',
+                      Block('AgentData', AgentID=uuid.UUID(self.agent_id),
+                            SessionID=uuid.UUID(self.session_id),
+                            CircuitCode=self.circuit_code))
+        self.messenger.send_reliable(msg, host, 0)
 
-        avatar = place(tp_region)        
-
-        self.host = Host(avatar.region.details['sim_ip'],
-                    avatar.region.details['sim_port'])
+        #SENDS UUIDNameRequest
+        msg = Message('UUIDNameRequest',
+                      Block('UUIDNameBlock', ID=uuid.UUID(self.agent_id)
+                            )
+                      )
+        self.messenger.send_message(msg, host)        
        
     def tearDown(self):
-        # essentially logout by deleting presence... etc.
-        self.messenger.new_message("LogoutRequest")
-        self.messenger.next_block("AgentData")
-        self.messenger.add_data('AgentID', \
-                                uuid.UUID(self.agent_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.add_data('SessionID', \
-                                uuid.UUID(self.session_id), \
-                                MsgType.MVT_LLUUID)
-        self.messenger.send_message(self.host)
+        msg = Message('LogoutRequest',
+                      Block('AgentData', AgentID=uuid.UUID(self.agent_id),
+                            SessionID=uuid.UUID(self.session_id)
+                            )
+                      )
+        self.messenger.send_message(msg, self.host)
 
+    def send_agent_update(self, agent_id, session_id, control_flag):
+        msg = Message('AgentUpdate',
+                      Block('AgentData', AgentID=uuid.UUID(agent_id),
+                            SessionID=uuid.UUID(self.session_id),
+                            BodyRotation=(0.0,0.0,0.0),
+                            HeadRotation=(0.0,0.0,0.0),
+                            State=0x00,
+                            CameraCenter=(0.0,0.0,0.0),
+                            CameraAtAxis=(1.0,0.0,0.0),
+                            CameraLeftAxis=(0.0,1.0,0.0),
+                            CameraUpAxis=(0.0,0.0,1.0),
+                            Far=1.0,
+                            ControlFlags=control_flag,
+                            Flags=0x00))
+
+        self.messenger.send_message(msg, self.host)
+
+    def send_region_handshake_reply(self, agent_id, session_id):
+        msg = Message('RegionHandshakeReply',
+                      [Block('AgentData', AgentID=uuid.UUID(agent_id),
+                            SessionID=uuid.UUID(self.session_id)),
+                       Block('RegionInfo', Flags=0x00)])
+
+        self.messenger.send_message(msg, self.host)
+    
+    def send_complete_ping_check(self, ping):
+        msg = Message('CompletePingCheck',
+                      Block('PingID', PingID=ping))
+
+        self.messenger.send_message(msg, self.host)
+
+#for threading
+def run_ad_eq(ad_event_queue):
+    #NOW, event queue to sim
+    while True:
+        result = ad_event_queue()
+        print "Agent Domain queue returned: "
+        pprint.pprint(result)
+
+def run_sim_eqg(sim_event_queue):
+    while True:
+        try:
+            result = sim_event_queue()
+            print "Sim event queue returned: "
+            pprint.pprint(result)
+        except Exception, e:
+            print "Sim had no events"
+            #just means nothing to get
+            pass
+
+def run_input_check(teleporter, agentdomain):
+    while True:
+        #wait til press
+        while not msvcrt.kbhit():
+            pass
+
+        c = msvcrt.getch()
+        if c == '\xe0':
+            kk = msvcrt.getch()
+            if kk == 'H':
+                if globals()["agentFlagSent"] != NUDGE_FORWARD:
+                    print 'NUDGING FORWARD'
+                    globals()["controlFlags"] = NUDGE_FORWARD
+                else:
+                    print 'MOVE UP'
+                    globals()["controlFlags"] = MOVE_FORWARD
+            elif kk == 'P':
+                print 'MOVE DOWN'
+                if globals()["agentFlagSent"] != NUDGE_BACKWARD:
+                    globals()["controlFlags"] = NUDGE_BACKWARD
+                else:
+                    globals()["controlFlags"] = MOVE_BACKWARD
+            elif kk == 'K':
+                print 'MOVE LEFT'
+                if globals()["agentFlagSent"] != NUDGE_LEFT:
+                    globals()["controlFlags"] = NUDGE_LEFT
+                else:
+                    globals()["controlFlags"] = MOVE_LEFT
+            elif kk == 'M':
+                print 'MOVE RIGHT'
+                if globals()["agentFlagSent"] != NUDGE_RIGHT:
+                    globals()["controlFlags"] = NUDGE_RIGHT
+                else:
+                    globals()["controlFlags"] = MOVE_RIGHT
+                
+            print kk
+        else:
+            #SPACE HALTS THE AGENT
+            if c == ' ':
+                globals()["controlFlags"] = STOP_MOVING
+            elif c == 't':
+                print 'TELEPORTING'
+                #READ THE TARGET REGION URL from a file
+                tp_region = Region(teleporter.target_region_uri)
+                place = IPlaceAvatar(agentdomain)
+
+                avatar = place(tp_region)        
+
+                host = IHost((avatar.region.details['sim_ip'],
+                            avatar.region.details['sim_port']))                
+
+                teleporter.connect(host, avatar.region)
+
+            print repr(c)    
+            
 
 def test_suite():
     from unittest import TestSuite, makeSuite

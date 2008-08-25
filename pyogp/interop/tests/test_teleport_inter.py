@@ -27,6 +27,7 @@ from pyogp.lib.base.message.message_types import MsgType
 from zope.component import provideUtility
 from pyogp.lib.base.network.interfaces import IUDPClient
 from pyogp.lib.base.network.net import NetUDPClient
+import teleport_region
 
 globals()["controlFlags"] = 0x00000000
 globals()["agentFlagSent"] = 0x00000000
@@ -111,34 +112,14 @@ class OGPTeleportTest(unittest.TestCase):
 
         self.agent_id = avatar.region.details['agent_id']
         self.session_id = avatar.region.details['session_id']
+        self.circuit_code = avatar.region.details['circuit_code']
         
         #begin UDP communication
         self.host = IHost((avatar.region.details['sim_ip'],
                     avatar.region.details['sim_port']))
 
-        #SENDS UseCircuitCode
-        msg = Message('UseCircuitCode',
-                      Block('CircuitCode', Code=avatar.region.details['circuit_code'],
-                            SessionID=uuid.UUID(self.session_id),
-                            ID=uuid.UUID(self.agent_id)))
-        self.messenger.send_reliable(IPacket(msg), self.host, 0)
-
-        time.sleep(1)
-
-        #SENDS CompleteAgentMovement
-        msg = Message('CompleteAgentMovement',
-                      Block('AgentData', AgentID=uuid.UUID(self.agent_id),
-                            SessionID=uuid.UUID(self.session_id),
-                            CircuitCode=avatar.region.details['circuit_code']))
-        self.messenger.send_reliable(IPacket(msg), self.host, 0)
-
-        #SENDS UUIDNameRequest
-        msg = Message('UUIDNameRequest',
-                      Block('UUIDNameBlock', ID=uuid.UUID(self.agent_id)
-                            )
-                      )
-        self.messenger.send_message(IPacket(msg), self.host)
-
+        self.connect(self.host, avatar.region)
+        
         print "Entering loop"
         last_ping = 0
         ad_event_queue = IEventQueueGet(agentdomain)
@@ -148,7 +129,7 @@ class OGPTeleportTest(unittest.TestCase):
         ad_queue_thread = Thread(target=run_ad_eq, name="Agent Domain event queue", args=(ad_event_queue,))
         sim_queue_thread = Thread(target=run_sim_eqg, name="Agent Domain event queue", args=(sim_event_queue,))
         if canInput == True:
-            input_thread = Thread(target=run_input_check, name="Thread to handle input")
+            input_thread = Thread(target=run_input_check, name="Thread to handle input", args=(self, agentdomain))
             input_thread.start()
         ad_queue_thread.start()
         sim_queue_thread.start()
@@ -184,6 +165,30 @@ class OGPTeleportTest(unittest.TestCase):
                 self.send_agent_update(self.agent_id, self.session_id, globals()["controlFlags"])
                 print "Control flags: " + repr(globals()["controlFlags"])
                 globals()["agentFlagSent"] = globals()["controlFlags"]
+
+    def connect(self, host, region):
+        #SENDS UseCircuitCode
+        msg = Message('UseCircuitCode',
+                      Block('CircuitCode', Code=self.circuit_code,
+                            SessionID=uuid.UUID(self.session_id),
+                            ID=uuid.UUID(self.agent_id)))
+        self.messenger.send_reliable(msg, host, 0)
+
+        time.sleep(1)
+
+        #SENDS CompleteAgentMovement
+        msg = Message('CompleteAgentMovement',
+                      Block('AgentData', AgentID=uuid.UUID(self.agent_id),
+                            SessionID=uuid.UUID(self.session_id),
+                            CircuitCode=self.circuit_code))
+        self.messenger.send_reliable(msg, host, 0)
+
+        #SENDS UUIDNameRequest
+        msg = Message('UUIDNameRequest',
+                      Block('UUIDNameBlock', ID=uuid.UUID(self.agent_id)
+                            )
+                      )
+        self.messenger.send_message(msg, host)        
        
     def tearDown(self):
         msg = Message('LogoutRequest',
@@ -243,7 +248,7 @@ def run_sim_eqg(sim_event_queue):
             #just means nothing to get
             pass
 
-def run_input_check():
+def run_input_check(teleporter, agentdomain):
     while True:
         #wait til press
         while not msvcrt.kbhit():
@@ -283,6 +288,19 @@ def run_input_check():
             #SPACE HALTS THE AGENT
             if c == ' ':
                 globals()["controlFlags"] = STOP_MOVING
+            elif c == 't':
+                print 'TELEPORTING'
+                reload(teleport_region)
+                #READ THE TARGET REGION URL from a file
+                tp_region = Region(teleport_region.region)
+                place = IPlaceAvatar(agentdomain)
+
+                avatar = place(tp_region, teleport_region.position)        
+
+                host = IHost((avatar.region.details['sim_ip'],
+                            avatar.region.details['sim_port']))                
+
+                teleporter.connect(host, avatar.region)
 
             print repr(c)    
             
