@@ -36,8 +36,36 @@ class ChatWindow(Frame):
         self.text = ScrolledTextPanel()
         self.text.pack()
 
+        self.tx = Text(self, height=1, width=60, borderwidth=5, relief=RIDGE)
+        self.tx.height = 1
+        self.tx.width = 60
+        self.tx.pack()
+        self.tx.bind('<Return>', self.hit_enter)
+        
+        self.b1 = Button(self, text="Send")
+        self.b1.pack(side=RIGHT, before=self.tx)
+        self.b1.configure(command=self.hit_enter)
+
         self.update()
-    
+
+    def set_enter_hit(self, func):
+        self.tx.bind('<Return>', func)
+        self.b1.configure(command=func)
+
+    def hit_enter(self):
+        print "ENTER HIT---------------"
+        if self.tx.get(END) == '\n':
+            print 'REMOVING SPACE'
+            self.tx.delete(END)
+
+        if self.tx.get(1.0) == '\n':
+            print 'REMOVING SPACE'
+            self.tx.delete(1.0)
+
+        msg = self.tx.get(1.0, END)
+        self.tx.delete(1.0,END)
+        return msg.replace("\n","")
+
     def write(self, *args, **kwds):
         return self.text.write(*args, **kwds)
 

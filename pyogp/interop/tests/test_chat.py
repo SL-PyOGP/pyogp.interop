@@ -86,7 +86,7 @@ class OGPTeleportTest(unittest.TestCase):
     
         credentials = PlainPasswordCredential(self.base_firstname, self.base_lastname, self.base_password)
         agentdomain = AgentDomain(self.login_uri)
-
+        print 'Logging in'
         #gets seedcap, and an agent that can be placed in a region
         agent = agentdomain.login(credentials)
         assert agentdomain.seed_cap != None or agentdomain.seed_cap != {}, "Login to agent domain failed"
@@ -124,9 +124,9 @@ class OGPTeleportTest(unittest.TestCase):
         self.host = IHost((avatar.region.details['sim_ip'],
                     avatar.region.details['sim_port']))
 
+        print "CONNECTING"
+
         self.connect(self.host, avatar.region)
-        
-        print "Entering loop"
         last_ping = 0
         ad_event_queue = IEventQueueGet(agentdomain)
         sim_event_queue = IEventQueueGet(region)
@@ -143,6 +143,10 @@ class OGPTeleportTest(unittest.TestCase):
         last_time = time.time()
         update_count = 0
         self.cw = chat_window.ChatWindow()
+        self.cw.set_enter_hit(self.text_entered)
+        self.cw.update()
+        
+        print "DONE MAIN LOOP"
         
         while True:
             msg_buf, msg_size = self.messenger.udp_client.receive_packet(self.messenger.socket)
@@ -180,6 +184,39 @@ class OGPTeleportTest(unittest.TestCase):
                     self.cw.write(message)
                 globals()["message_list"] = []
 
+            self.cw.update()
+
+    def text_entered(self, event=None):
+        chat_message = self.cw.hit_enter()
+        self.send_chat_message(self.host,
+                               self.agent_id,
+                               self.session_id,
+                               chat_message)
+        self.cw.write('You: ' + chat_message)
+
+    def handle_chat_message(self, packet):
+        print "--------------Chat type-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['ChatType'].data)
+        print "--------------Audible-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['Audible'].data)
+        if packet.message_data.blocks['ChatData'][0].vars['ChatType'].data == 4:
+            return
+        print "FROM: " + str(packet.message_data.blocks['ChatData'][0].vars['FromName'].data)
+        print "MESSAGE: " + str(packet.message_data.blocks['ChatData'][0].vars['Message'].data)
+        message = packet.message_data.blocks['ChatData'][0].vars['FromName'].data
+        message += ': '
+        message += packet.message_data.blocks['ChatData'][0].vars['Message'].data
+        print "Chat message: " + message
+        self.cw.write(message)
+
+    def send_chat_message(self, host, agent_id, session_id, message):
+        message = message + '\x00' #add null-terminator onto the end
+        msg = Message('ChatFromViewer',
+                      Block('AgentData', AgentID=uuid.UUID(agent_id),
+                            SessionID=uuid.UUID(self.session_id)),
+                       Block('ChatData', Message=message, Type=1, Channel=0))
+
+        self.messenger.send_message(msg, host)
+        #globals()["message_list"].append('You: ' + message + '\n')
+        
     def connect(self, host, region):
         #SENDS UseCircuitCode
         msg = Message('UseCircuitCode',
@@ -202,21 +239,8 @@ class OGPTeleportTest(unittest.TestCase):
                       Block('UUIDNameBlock', ID=uuid.UUID(self.agent_id)
                             )
                       )
-        self.messenger.send_message(msg, host)        
-
-    def handle_chat_message(self, packet):
-        print "--------------Chat type-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['ChatType'].data)
-        print "--------------Audible-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['Audible'].data)
-        if packet.message_data.blocks['ChatData'][0].vars['ChatType'].data == 4:
-            return
-        print "FROM: " + str(packet.message_data.blocks['ChatData'][0].vars['FromName'].data)
-        print "MESSAGE: " + str(packet.message_data.blocks['ChatData'][0].vars['Message'].data)
-        message = packet.message_data.blocks['ChatData'][0].vars['FromName'].data
-        message += ': '
-        message += packet.message_data.blocks['ChatData'][0].vars['Message'].data
-        message += '\n'
-        print "Chat message: " + message
-        self.cw.write(message)
+        self.messenger.send_message(msg, host)
+        self.host = host
        
     def tearDown(self):
         msg = Message('LogoutRequest',
@@ -256,16 +280,6 @@ class OGPTeleportTest(unittest.TestCase):
                       Block('PingID', PingID=ping))
 
         self.messenger.send_message(msg, self.host)
-
-    def send_chat_message(self, host, agent_id, session_id, message):
-        msg = Message('ChatFromViewer',
-                      Block('AgentData', AgentID=uuid.UUID(agent_id),
-                            SessionID=uuid.UUID(self.session_id)),
-                       Block('ChatData', Message=message, Type=0, Channel=0))
-
-        print "CHATDATA TYPE: " + str(msg.blocks['ChatData'][0].vars['Type'].data)
-        self.messenger.send_message(msg, host)
-        globals()["message_list"].append('You: ' + message + '\n')
 
 
 #for threading
@@ -346,12 +360,13 @@ def run_input_check(teleporter, agentdomain):
 
                 teleporter.connect(host, avatar.region)
             elif c == 'u':
-                reload(teleport_region)
+                pass
+                #reload(teleport_region)
                 #cw = globals()["chat_window"]
-                teleporter.send_chat_message(host,
+                """teleporter.send_chat_message(host,
                                              teleporter.agent_id,
                                              teleporter.session_id,
-                                             teleport_region.chat)
+                                             teleport_region.chat)"""
             print repr(c)    
             
 
