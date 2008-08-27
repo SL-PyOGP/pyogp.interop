@@ -192,23 +192,22 @@ class OGPTeleportTest(unittest.TestCase):
                                self.agent_id,
                                self.session_id,
                                chat_message)
-        self.cw.write('You: ' + chat_message)
 
     def handle_chat_message(self, packet):
         print "--------------Chat type-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['ChatType'].data)
         print "--------------Audible-----------: " + str(packet.message_data.blocks['ChatData'][0].vars['Audible'].data)
-        if packet.message_data.blocks['ChatData'][0].vars['ChatType'].data == 4:
-            return
         print "FROM: " + str(packet.message_data.blocks['ChatData'][0].vars['FromName'].data)
         print "MESSAGE: " + str(packet.message_data.blocks['ChatData'][0].vars['Message'].data)
-        message = packet.message_data.blocks['ChatData'][0].vars['FromName'].data
-        message += ': '
-        message += packet.message_data.blocks['ChatData'][0].vars['Message'].data
-        print "Chat message: " + message
-        self.cw.write(message)
+        from_user = packet.message_data.blocks['ChatData'][0].vars['FromName'].data
+        chat_msg = packet.message_data.blocks['ChatData'][0].vars['Message'].data
+        if not chat_msg.isspace() and chat_msg != '\n' and chat_msg != None and chat_msg != '' and chat_msg != ' ':
+            message = from_user + ': ' + chat_msg + '\n'
+            print "Chat message: " + repr(message)
+            self.cw.write(message.replace("\x00", ""))
 
     def send_chat_message(self, host, agent_id, session_id, message):
         message = message + '\x00' #add null-terminator onto the end
+        print 'Sending Message: ' + message
         msg = Message('ChatFromViewer',
                       Block('AgentData', AgentID=uuid.UUID(agent_id),
                             SessionID=uuid.UUID(self.session_id)),

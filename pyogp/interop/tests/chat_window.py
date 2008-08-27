@@ -8,7 +8,7 @@ class ScrolledTextPanel(ScrolledText):
         ScrolledText.__init__(self, state=DISABLED, *args, **kwds)
     
     def write(self, text):
-        print "WRITING"
+        print "WRITING text: " + text
         self.config(state=NORMAL)
         print "INSERTING"
         self.insert(END, text)
