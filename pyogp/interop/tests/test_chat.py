@@ -22,7 +22,7 @@ from pyogp.lib.base.OGPLogin import OGPLogin
 from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
 from pyogp.lib.base.message.message import Message, Block
 from pyogp.lib.base.message.interfaces import IHost, IPacket
-from pyogp.lib.base.message.message_types import MsgType
+from pyogp.lib.base.message.types import MsgType
 
 from zope.component import provideUtility
 from pyogp.lib.base.network.interfaces import IUDPClient

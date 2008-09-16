@@ -1,13 +1,17 @@
-#!/usr/bin/python
-
+# std lib
 import unittest
 import ConfigParser
 from pkg_resources import resource_stream
 
+# pygop
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
+from pyogp.lib.base.credentials import PlainPasswordCredential
+from pyogp.lib.base.agentdomain import AgentDomain
+from pyogp.lib.base.regiondomain import Region
 
-from helpers import Agent
+# pyogp.interop
+import helpers
 
 '''
 
@@ -24,19 +28,24 @@ class testCapAgentInfo(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        self.firstname = config.get('test_interop_account', 'firstname')
-        self.lastname = config.get('test_interop_account', 'lastname')
-        self.password = config.get('test_interop_account', 'password')
-        self.login_uri = config.get('test_interop_account', 'login_uri')
+        self.test_setup_config_name = 'test_interop_account'
         
-        self.region_uri = config.get('test_interop_regions', 'start_region_uri')
+        self.firstname = config.get(self.test_setup_config_name, 'firstname')
+        self.lastname = config.get(self.test_setup_config_name, 'lastname')
+        self.password = config.get(self.test_setup_config_name, 'password')
+        self.login_uri = config.get(self.test_setup_config_name, 'login_uri')        
+        self.region_uri = config.get('test_interop_regions', 'start_region_uri') 
+
+        # first establish an AD connection and get seed_cap for mtg
+        # <start>
+        self.agentdomain = AgentDomain(self.login_uri)
         
-        self.client = Agent()
-        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
-        self.caps = self.client.agentdomain.seed_cap.get(['agent/info'])
-        
-        print 'Seed cap is: ' + self.client.agentdomain.seed_cap.public_url
-        print 'agent/info cap is: ' + self.caps['agent/info'].public_url
+        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+
+        #gets seedcap, and an agent that can be placed in a region
+        self.agentdomain.login(credentials)
+ 
+        self.caps = self.agentdomain.seed_cap.get(['agent/info'])
         
         # initialize the cap object for use in postToCap
         self.capability = Capability('agent/info', self.caps['agent/info'].public_url)

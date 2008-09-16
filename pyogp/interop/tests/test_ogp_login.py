@@ -1,28 +1,31 @@
+# std lib
 import unittest, doctest
 import ConfigParser
 from pkg_resources import resource_stream
 
+# zca
+from zope.component import queryUtility, adapts, getUtility
+
+# pyogp.lib.base
 from pyogp.lib.base.credentials import PlainPasswordCredential
 from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
-from pyogp.lib.base.registration import init
-from pyogp.lib.base.interfaces import IPlaceAvatar
-from pyogp.lib.base.OGPLogin import OGPLogin
+from pyogp.lib.base.interfaces import IPlaceAvatar # ToDo: move to agentdomain.PlaceAvatar?
+#from pyogp.lib.base.OGPLogin import OGPLogin
+from pyogp.lib.base.interfaces import ISerialization
+from pyogp.lib.base.network import IRESTClient
 
-from helpers import Agent
+# pyogp.interop
+from helpers import logout
 
 class AuthOGPLoginTest(unittest.TestCase):
-
-    login_uri = None
-    region_uri = None
-
+   
     def setUp(self):
-        init() # initialize the framework        
 
         # initialize the config
         self.config = ConfigParser.ConfigParser()
         self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
-        
+                
         self.test_setup_config_name = 'test_interop_account'
         
         self.firstname = self.config.get(self.test_setup_config_name, 'firstname')
@@ -31,80 +34,85 @@ class AuthOGPLoginTest(unittest.TestCase):
         self.login_uri = self.config.get(self.test_setup_config_name, 'login_uri')        
         self.region_uri = self.config.get('test_interop_regions', 'start_region_uri') 
 
-        self.client = Agent()
+        self.agentdomain = AgentDomain(self.login_uri)
 
     def tearDown(self):
-       
-        if True: # need a flag in the lib for when an agent has logged in 
-            self.client.logout()
+        
+        if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in 
+            logout(self.agentdomain)
         
     def test_base_login(self):
         """ login with an account which should just work """
         # in the case the of the OGP Beta, memdership in the gridnauts group is required
  
-        self.client.authenticate(self.firstname, self.lastname, self.password, self.login_uri)
-        
-        if self.debug: print 'Authenticating: ' + self.firstname, self.lastname, self.login_uri
+        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
 
         #gets seedcap, and an agent that can be placed in a region
-        assert self.client.agentdomain.seed_cap.public_url != None or self.client.agentdomain.seed_cap.public_url != {}, "Login to agent domain failed"
+        self.agentdomain.login(credentials)
+
+        #gets seedcap, and an agent that can be placed in a region
+        assert self.agentdomain.seed_cap.public_url != None or self.agentdomain.seed_cap.public_url != {}, "Login to agent domain failed"
  
-        self.client.rezOnSim(self.region_uri)
+        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
+
+        # try and connect to a sim
+        self.region = Region(self.region_uri)
+        place = IPlaceAvatar(self.agentdomain)
+
+        self.avatar  = place(self.region)
         
-        print self.client.region.details
+        #print self.client.region.details
         
         # test that rez_avatar/place contains the proper respose data
-        assert self.client.avatar.region.details['seed_capability'] != None or client.avatar.region.details['seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
-        assert self.client.avatar.region.details['look_at'] != None or self.client.avatar.region.details['look_at'] != {}, "Rez_avatar/place returned no look_at"
-        assert self.client.avatar.region.details['sim_ip'] != None or self.client.avatar.region.details['sim_ip'] != {}, "Rez_avatar/place returned no sim_ip"
-        assert self.client.avatar.region.details['sim_port'] != None or self.client.avatar.region.details['sim_port'] != {}, "Rez_avatar/place returned no sim_port"
-        assert self.client.avatar.region.details['region_x'] != None or self.client.avatar.region.details['region_x'] != {}, "Rez_avatar/place returned no region_x"
-        assert self.client.avatar.region.details['region_y'] != None or self.client.avatar.region.details['region_y'] != {}, "Rez_avatar/place returned no region_y"
-        assert self.client.avatar.region.details['region_id'] != None or self.client.avatar.region.details['region_id'] != {}, "Rez_avatar/place returned no region_id"
-        assert self.client.avatar.region.details['sim_access'] != None or self.client.avatar.region.details['sim_access'] != {}, "Rez_avatar/place returned no sim_access"
-        assert self.client.avatar.region.details['connect'] != None or self.client.avatar.region.details['connect'] != {}, "Rez_avatar/place returned no connect"
-        assert self.client.avatar.region.details['position'] != None or self.client.avatar.region.details['position'] != {}, "Rez_avatar/place returned no position"
-        assert self.client.avatar.region.details['session_id'] != None or self.client.avatar.region.details['session_id'] != {}, "Rez_avatar/place returned no session_id"
-        assert self.client.avatar.region.details['secure_session_id'] != None or self.client.avatar.region.details['secure_session_id'] != {}, "Rez_avatar/place returned no secure_session_id"
-        assert self.client.avatar.region.details['circuit_code'] != None or self.client.avatar.region.details['circuit_code'] != {}, "Rez_avatar/place returned no cicuit_code"
+        assert self.avatar.region.details['seed_capability'] != None or self.avatar.region.details['seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
+        assert self.avatar.region.details['look_at'] != None or self.avatar.region.details['look_at'] != {}, "Rez_avatar/place returned no look_at"
+        assert self.avatar.region.details['sim_ip'] != None or self.avatar.region.details['sim_ip'] != {}, "Rez_avatar/place returned no sim_ip"
+        assert self.avatar.region.details['sim_port'] != None or self.avatar.region.details['sim_port'] != {}, "Rez_avatar/place returned no sim_port"
+        assert self.avatar.region.details['region_x'] != None or self.avatar.region.details['region_x'] != {}, "Rez_avatar/place returned no region_x"
+        assert self.avatar.region.details['region_y'] != None or self.avatar.region.details['region_y'] != {}, "Rez_avatar/place returned no region_y"
+        assert self.avatar.region.details['region_id'] != None or self.avatar.region.details['region_id'] != {}, "Rez_avatar/place returned no region_id"
+        assert self.avatar.region.details['sim_access'] != None or self.avatar.region.details['sim_access'] != {}, "Rez_avatar/place returned no sim_access"
+        assert self.avatar.region.details['connect'] != None or self.avatar.region.details['connect'] != {}, "Rez_avatar/place returned no connect"
+        assert self.avatar.region.details['position'] != None or self.avatar.region.details['position'] != {}, "Rez_avatar/place returned no position"
+        assert self.avatar.region.details['session_id'] != None or self.avatar.region.details['session_id'] != {}, "Rez_avatar/place returned no session_id"
+        assert self.avatar.region.details['secure_session_id'] != None or self.avatar.region.details['secure_session_id'] != {}, "Rez_avatar/place returned no secure_session_id"
+        assert self.avatar.region.details['circuit_code'] != None or self.avatar.region.details['circuit_code'] != {}, "Rez_avatar/place returned no cicuit_code"
 
     def test_auth_base_account(self):
         """ auth with an account which should just work """
 
-        response = self.client.postToLoginUri(self.firstname, self.lastname, self.password, self.login_uri)
-
-        if self.debug: print 'Login response (headers.location)  = ' + str(response)
+        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)        
                 
-        # once the redirect is gone, this is the appropriate test
-        '''
-        assert (response.has_key('authenticated') and
-                response.has_key('location'))
+        response = self.agentdomain.post_to_loginuri(credentials)
+        data = self.agentdomain.parse_login_response(response)
         
-        assert response['authenticated'] == True
+        assert (data.has_key('authenticated') and
+                data.has_key('agent_seed_capability'))
+        
+        assert data['authenticated'] == True
         # this is the AD seed cap
-        assert response['location'] != None
-        '''
-        
-        assert response != None
+        assert data['agent_seed_capability'] != None
         
     def test_auth_unknown_account(self):
         """ auth with an account which should just never work """
         
-        response = self.client.postToLoginUri('foxinsox', 'greeneggsandham', 'tweetlebeetlebattle', self.login_uri)
-
-        if self.debug: print 'result  = ' + str(response)
+        credentials = PlainPasswordCredential('foxinsox', 'greeneggsandham', 'tweetlebeetlebattle')        
                 
-        assert (response.has_key('authenticated') and
-                response.has_key('reason') and
-                response.has_key('message'))
+        response = self.agentdomain.post_to_loginuri(credentials)
+        data = self.agentdomain.parse_login_response(response)
+
+        self.assert_(data.has_key('authenticated') and
+                data.has_key('reason') and
+                data.has_key('message'))
         
-        assert response['authenticated'] == False
-        assert response['message'] == 'Agent does not exist'
-        
+        assert data['authenticated'] == False
+        assert data['message'] == 'Agent does not exist'
+        assert data['reason'] == 'data'
+
+                
     # Other tests to write:
 
     # test_auth_(good account with bad password)
-    # test_auth_banned_account
     # test_auth_(new account that hasn't accepted ToS etc yet)
     # Infinity's tests will likely cover much of this
     # test invalid inputs: variations of no firstname, lastname, password/md5password

@@ -1,13 +1,18 @@
-#!/usr/bin/python
-
+# std lib
 import unittest, time
 import ConfigParser
 from pkg_resources import resource_stream
 
+# pygop
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
+from pyogp.lib.base.credentials import PlainPasswordCredential
+from pyogp.lib.base.agentdomain import AgentDomain
+from pyogp.lib.base.regiondomain import Region
+from pyogp.lib.base.interfaces import IPlaceAvatar
 
-from helpers import Agent
+# pyogp.interop
+import helpers
 
 '''
 # in progress, tests are skipped
@@ -26,26 +31,38 @@ class RezAvatarDerezTest(unittest.TestCase):
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        test_setup_config_name = 'test_rez_avatar_derez_setup'
+        self.test_setup_config_name = 'test_interop_account'
         
-        self.firstname = config.get('test_interop_account', 'firstname')
-        self.lastname = config.get('test_interop_account', 'lastname')
-        self.password = config.get('test_interop_account', 'password')
-        self.login_uri = config.get('test_interop_account', 'login_uri')
-        self.agent_id = config.get('test_interop_account', 'agent_id') # this can come from self.client.id once agent/info is working
+        self.firstname = config.get(self.test_setup_config_name, 'firstname')
+        self.lastname = config.get(self.test_setup_config_name, 'lastname')
+        self.password = config.get(self.test_setup_config_name, 'password')
+        self.login_uri = config.get(self.test_setup_config_name, 'login_uri')        
+        self.start_region_uri = config.get('test_interop_regions', 'start_region_uri') 
+        self.target_region_uri = config.get('test_interop_regions', 'target_region_uri') 
         
-        self.source_region_uri = config.get('test_interop_regions', 'start_region_uri')        
-        self.target_region_uri = config.get('test_interop_regions', 'target_region_uri')
+        # first establish an AD connection and get seed_cap for mtg
+        # <start>
+        self.agentdomain = AgentDomain(self.login_uri)
+        
+        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+
+        #gets seedcap, and an agent that can be placed in a region
+        self.agentdomain.login(credentials)
+ 
+        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
+
+        # try and connect to a sim
+        self.region = Region(self.start_region_uri)
+        place = IPlaceAvatar(self.agentdomain)
+
+        self.avatar = place(self.region)
+        # </start>
         
         self.position = config.get('test_rez_avatar_derez', 'position') 
 
-        # agent has to rez on the sim before the derez cap can be called
-        self.client = Agent()
-        self.client.login(self.firstname, self.lastname, self.password, self.login_uri, self.source_region_uri)
-        
         # we can't request these caps as a client, but we can craft them ourselves
-        self.rez_avatar_url = self.target_region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
-        self.derez_avatar_url = self.source_region_uri + '/agent/' + self.agent_id + '/rez_avatar/derez'
+        self.rez_avatar_url = self.target_region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/rez'
+        self.derez_avatar_url = self.start_region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/derez'
         
         # Required parameters: { rez-avatar/rez: url string, position: [x real, y real, z real, ] }              
         self.required_parameters = {
@@ -55,7 +72,6 @@ class RezAvatarDerezTest(unittest.TestCase):
         
         self.capability = Capability('rez_avatar/derez', self.derez_avatar_url)              
 
-        if self.debug: print 'rez_avatar/derez url = ' + self.derez_avatar_url
         
     def tearDown(self):
         pass
@@ -64,8 +80,6 @@ class RezAvatarDerezTest(unittest.TestCase):
 
 
     def postToCap(self, arguments):
-
-        if self.debug: print 'posting to cap = ' + str(arguments)
       
         try:
             result = self.capability.POST(arguments)
@@ -99,8 +113,6 @@ class RezAvatarDerezTest(unittest.TestCase):
         print 'Until we can maintain presence, we have nothing to do here'
         '''
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_successful_response(result)
         self.assertEquals(result['connect'], True)

@@ -1,11 +1,18 @@
-#!/usr/bin/python
-
+# std lib
 import unittest
 import ConfigParser
 from pkg_resources import resource_stream
 
+# pygop
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
+from pyogp.lib.base.credentials import PlainPasswordCredential
+from pyogp.lib.base.agentdomain import AgentDomain
+from pyogp.lib.base.regiondomain import Region
+from pyogp.lib.base.interfaces import IPlaceAvatar
+
+# pyogp.interop
+from helpers import logout
 
 '''
 Tests for the rez_avatar/rez capability as run against simulators (acting as the agent domain)
@@ -23,50 +30,56 @@ class RezAvatarRezTests(unittest.TestCase):
         self.config = ConfigParser.ConfigParser()
         self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
-        self.test_setup_config_name = 'test_rez_avatar_rez'
+        self.test_setup_config_name = 'test_interop_account'
         
-        # grab the testdata from testconfig.cfg
-        self.agent_id = self.config.get(self.test_setup_config_name, 'agent_id')
-        self.region_uri = self.config.get('test_interop_regions', 'start_region_uri')
-        self.position = self.config.get(self.test_setup_config_name, 'position')
+        self.firstname = self.config.get(self.test_setup_config_name, 'firstname')
+        self.lastname = self.config.get(self.test_setup_config_name, 'lastname')
+        self.password = self.config.get(self.test_setup_config_name, 'password')
+        self.login_uri = self.config.get(self.test_setup_config_name, 'login_uri')        
+        self.region_uri = self.config.get('test_interop_regions', 'start_region_uri') 
+
+        # first establish an AD connection and get seed_cap for mtg
+        # <start>
+        self.agentdomain = AgentDomain(self.login_uri)
         
-        # we can't request this cap, but we can craft it ourselves        
-        self.rez_avatar_url  = self.region_uri + '/agent/' + self.agent_id + '/rez_avatar/rez'
+        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+
+        #gets seedcap, and an agent that can be placed in a region
+        self.agentdomain.login(credentials)
+ 
+        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
+
+        # try and connect to a sim
+        self.region = Region(self.region_uri)
+        place = IPlaceAvatar(self.agentdomain)
+
+        self.avatar = place(self.region)
+        # </start>
         
-        # Required parameters: { circuit_code: int, position: [x real ,y real, z real, ], secure_session_id: uuid , session_id: uuid , avatar_data: TBD }
+                # Required parameters: { circuit_code: int, position: [x real ,y real, z real, ], secure_session_id: uuid , session_id: uuid , avatar_data: TBD }
         # Note the TBD on avatar data
         self.required_parameters = { 
-           'circuit_code' : self.config.get(self.test_setup_config_name, 'circuit_code'),
-           'position' : self.position,
-           'secure_session_id' : self.config.get(self.test_setup_config_name, 'secure_session_id'),
-           'session_id' : self.config.get(self.test_setup_config_name, 'session_id')
+           'circuit_code' : self.avatar.region.details['circuit_code'],
+           'position' : self.config.get('test_rez_avatar_rez', 'position'),
+           'secure_session_id' : self.avatar.region.details['secure_session_id'],
+           'session_id' : self.avatar.region.details['session_id']
            }
            
-        self.full_parameters = {
-           'circuit_code' : self.config.get(self.test_setup_config_name, 'circuit_code'),
-           'position' : self.position,
-           'secure_session_id' : self.config.get(self.test_setup_config_name, 'secure_session_id'),
-           'session_id' : self.config.get(self.test_setup_config_name, 'session_id'),
-           'avatar_data' : None
-           }
-       
-       
+        # we can't request this cap, but we can craft it ourselves        
+        self.rez_avatar_url  = self.region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/rez'
+               
         # Set state for the test
         #     The sim doesn't care about the agent domain per se for rez_avatar/rez
         #     We can work jsut with a rez_avatar_url and post params
         self.capability = Capability('rez_avatar/rez', self.rez_avatar_url)
-
-        if self.debug: print 'rez_avatar/rez url = ' + self.rez_avatar_url
-
+        
     def tearDown(self):
         
-        # we don't login, don't need to logout :)
-        pass
+        if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in 
+            logout(self.agentdomain)
     
     def postToCap(self, arguments):
 
-        if self.debug: print 'posting to cap = ' + str(arguments)
-        
         try:
             result = self.capability.POST(arguments)
         except Exception, e:
@@ -92,44 +105,33 @@ class RezAvatarRezTests(unittest.TestCase):
 
         result = self.postToCap(self.required_parameters)
 
-        if self.debug: print 'result  = ' + str(result)
-
         self.check_response(result)
-        self.assertEquals(result['connect'], True)
 
-    def test_rez_avatar_rez_full(self):
-        """ agent is allowed to rez when passing the required params """
-
-        result = self.postToCap(self.full_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
-
-        self.check_response(result)
-        self.assertEquals(result['connect'], True)
-    
-    def test_cap_rez_avatar_rez_success_params(self):
-    
-        result = self.postToCap(self.required_parameters)
-        
-        if self.debug: print 'result  = ' + str(result)
-        
-        self.check_response(result)
-        # Successful response: { connect: "True" look_at: [x real ,y real, z real, ] , position: [x real ,y real, z real, ], rez_avatar/derez: cap }
         self.assert_(result.has_key('connect') and
-                     result.has_key('look_at') and
-                     result.has_key('position') and
-                     result.has_key('rez_avatar/derez'), 'successful cap post is missing parameters in the response')
+             result.has_key('look_at') and
+             result.has_key('position'))
+             # removed in OGP Draft 3 docs
+             #result.has_key('rez_avatar/derez'), 'successful cap post is missing parameters in the response')
+             
+        self.assertEquals(result['connect'], True)
 
-    def test_cap_rez_avatar_rez_success_keys(self):
-        """ test that a success response contains no additional keys """
-        
-        result = self.postToCap(self.required_parameters)
-        
-        self.check_response(result)
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
 
-        if self.debug: print 'result  = ' + str(result)
-        
-        valid_keys = ['connect', 'look_at', 'position', 'rez_avatar/derez']
+        self.assert_(result['look_at'][0] >= 0 and
+                     result['look_at'][1] >= 0 and 
+                     result['look_at'][2] >= 0)
+                                          
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+
+        self.assert_(result['position'][0] >= 0 and
+                     result['position'][1] >= 0 and 
+                     result['position'][2] >= 0)
+
+        valid_keys = ['connect', 'look_at', 'position']
         fail = 0 
         extra_keys = ''
         
@@ -140,41 +142,8 @@ class RezAvatarRezTests(unittest.TestCase):
                 fail = 1
                 extra_keys = extra_keys + ' ' + key
         
-        self.assertEquals(fail, 0, 'response has additional keys: ' + extra_keys)        
-                     
-    def test_rez_avatar_rez_position(self):
-        """ verify position values are within range """
-
-        result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
-        
-        self.check_response(result)
-        # LL convention. OpenSim too atm?
-        self.assert_(result['position'][0] < 256 and
-                     result['position'][1] < 256 and 
-                     result['position'][2] < 256)
+        self.assertEquals(fail, 0, 'response has additional keys: ' + extra_keys)       
     
-    def test_rez_avatar_rez_connect(self):
-        """ verify position values are within range """
-
-        result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
-        
-        self.check_response(result)        
-        self.assertEquals(result['connect'], True)
-                     
-    def test_rez_avatar_rez_derez_cap(self):
-        """ verify look_at values are within range """
-
-        result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
-        
-        self.check_response(result)
-        self.assert_(result.has_key('rez_avatar/derez'))
-        
     def test_rez_avatar_rez_nocontent(self):
         """ verify look_at values are within range """
           
@@ -186,8 +155,6 @@ class RezAvatarRezTests(unittest.TestCase):
            }
            
         result = self.postToCap(empty_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)
         self.assertEquals(result['connect'], False)
@@ -203,8 +170,6 @@ class RezAvatarRezTests(unittest.TestCase):
            }
 
         result = self.postToCap(empty_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         # Failure response: { connect: False, redirect: False, resethome: False, message: string } 
         self.assert_(result.has_key('connect') and
@@ -218,8 +183,6 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['circuit_code'] = ''
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
@@ -231,12 +194,24 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['position'] = ''
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
-        self.check_response(result)        
-        self.assertEquals(result['connect'], False)
-        #self.assertEquals(result['message'], '', 'invalid message value') 
+        self.assertEquals(result['connect'], True)
+
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
+
+        self.assert_(result['look_at'][0] >= 0 and
+                     result['look_at'][1] >= 0 and 
+                     result['look_at'][2] >= 0)
+                                          
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+
+        self.assert_(result['position'][0] >= 0 and
+                     result['position'][1] >= 0 and 
+                     result['position'][2] >= 0)
 
     def test_rez_avatar_rez_missing_ssid(self):
         """ verify response to missing secure session id """
@@ -244,12 +219,26 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['secure_session_id'] = ''
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)        
-        self.assertEquals(result['connect'], False)
-        #self.assertEquals(result['message'], '', 'invalid message value')
+
+        self.assertEquals(result['connect'], True)
+
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
+
+        self.assert_(result['look_at'][0] >= 0 and
+                     result['look_at'][1] >= 0 and 
+                     result['look_at'][2] >= 0)
+                                          
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+
+        self.assert_(result['position'][0] >= 0 and
+                     result['position'][1] >= 0 and 
+                     result['position'][2] >= 0)
 
     def test_rez_avatar_rez_missing_sid(self):
         """ verify response to missing session id """
@@ -257,8 +246,6 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['session_id'] = ''
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)        
         self.assertEquals(result['connect'], False)
@@ -281,12 +268,26 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['position'] = 'lookoverthere'
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
-        self.check_response(result)        
-        self.assertEquals(result['connect'], False)
-        #self.assertEquals(result['message'], '', 'invalid message value') 
+        self.check_response(result)   
+             
+        self.assertEquals(result['connect'], True)
+
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
+
+        self.assert_(result['look_at'][0] >= 0 and
+                     result['look_at'][1] >= 0 and 
+                     result['look_at'][2] >= 0)
+                                          
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+
+        self.assert_(result['position'][0] >= 0 and
+                     result['position'][1] >= 0 and 
+                     result['position'][2] >= 0)
 
     def test_rez_avatar_rez_invalid_ssid(self):
         """ verify response to invalid secure_session_id """
@@ -294,12 +295,26 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['secure_session_id'] = '00000000-000000-0000-0000-000000000000'
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)        
-        self.assertEquals(result['connect'], False)
-        #self.assertEquals(result['message'], '', 'invalid message value')
+
+        self.assertEquals(result['connect'], True)
+
+        self.assert_(result['look_at'][0] < 256 and
+                     result['look_at'][1] < 256 and 
+                     result['look_at'][2] < 256)
+
+        self.assert_(result['look_at'][0] >= 0 and
+                     result['look_at'][1] >= 0 and 
+                     result['look_at'][2] >= 0)
+                                          
+        self.assert_(result['position'][0] < 256 and
+                     result['position'][1] < 256 and 
+                     result['position'][2] < 256)
+
+        self.assert_(result['position'][0] >= 0 and
+                     result['position'][1] >= 0 and 
+                     result['position'][2] >= 0)
 
     def test_rez_avatar_rez_invalid_sid(self):
         """ verify response to invalid session_id """
@@ -307,8 +322,6 @@ class RezAvatarRezTests(unittest.TestCase):
         self.required_parameters['session_id'] = '00000000-000000-0000-0000-000000000000'
         
         result = self.postToCap(self.required_parameters)
-
-        if self.debug: print 'result  = ' + str(result)
         
         self.check_response(result)        
         self.assertEquals(result['connect'], False)

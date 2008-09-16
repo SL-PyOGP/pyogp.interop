@@ -1,5 +1,4 @@
-#!/usr/bin/python
-
+# std lib
 import unittest
 import ConfigParser
 from pkg_resources import resource_stream
@@ -7,7 +6,8 @@ from pkg_resources import resource_stream
 from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
 
-from helpers import Agent
+# pyogp.interop
+import helpers
 
 '''
 NOT YET AVAILABLE (documented, not implemented)

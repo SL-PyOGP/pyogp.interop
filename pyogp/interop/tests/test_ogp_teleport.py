@@ -22,7 +22,7 @@ from pyogp.lib.base.OGPLogin import OGPLogin
 from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
 from pyogp.lib.base.message.message import Message, Block
 from pyogp.lib.base.message.interfaces import IHost, IPacket
-from pyogp.lib.base.message.message_types import MsgType
+from pyogp.lib.base.message.types import MsgType
 
 from zope.component import provideUtility
 from pyogp.lib.base.network.interfaces import IUDPClient
@@ -59,25 +59,26 @@ class OGPTeleportTest(unittest.TestCase):
         self.session_id = ''
 
         # initialize the config
-        config = ConfigParser.ConfigParser()
-        config.readfp(resource_stream(__name__, 'testconfig.cfg'))
+        self.config = ConfigParser.ConfigParser()
+        self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
 
-        # global test attributes
-        self.login_uri = config.get('test_ogpteleport_setup', 'login_uri')
-        self.start_region_uri = config.get('test_ogpteleport_setup', 'start_region_uri')
-
-        # test_base_login attributes
-        self.target_region_uri = config.get('test_base_teleport', 'target_region_uri')
-        self.base_firstname = config.get('test_base_teleport', 'firstname')
-        self.base_lastname = config.get('test_base_teleport', 'lastname')
-        self.base_password = config.get('test_base_teleport', 'password')
+        # test attributes
+        self.test_setup_config_name = 'test_interop_account'
+        
+        self.firstname = self.config.get(self.test_setup_config_name, 'firstname')
+        self.lastname = self.config.get(self.test_setup_config_name, 'lastname')
+        self.password = self.config.get(self.test_setup_config_name, 'password')
+        self.login_uri = self.config.get(self.test_setup_config_name, 'login_uri')        
+        self.start_region_uri = self.config.get('test_interop_regions', 'start_region_uri')
+        self.target_region_uri = self.config.get('test_interop_regions', 'target_region_uri')
+        
         #don't need a port, not sure why we have it there yet
         self.messenger = UDPDispatcher()
         self.host = None
 
     def test_base_teleport(self):
     
-        credentials = PlainPasswordCredential(self.base_firstname, self.base_lastname, self.base_password)
+        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
         agentdomain = AgentDomain(self.login_uri)
 
         #gets seedcap, and an agent that can be placed in a region
