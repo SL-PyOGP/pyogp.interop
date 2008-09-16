@@ -168,12 +168,12 @@ class OGPEventQueue(unittest.TestCase):
             else:
                 print 'No message'
                 
-        if self.messenger.has_unacked():
+            if self.messenger.has_unacked():
                 print 'Acking'
                 self.messenger.process_acks()
                 self.send_agent_update(self.agent_id, self.session_id)
         
-        now = time.time()
+            now = time.time()
        
     def tearDown(self):
         msg = Message('LogoutRequest',
