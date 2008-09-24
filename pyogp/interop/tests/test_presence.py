@@ -93,6 +93,12 @@ class OGPPresenceTest(unittest.TestCase):
         self.agent_id = avatar.region.details['agent_id']
         self.session_id = avatar.region.details['session_id']
         
+        print dir(avatar.region.details['sim_ip'])
+        #print avatar.region.details['sim_ip'].__dict__
+        print dir(avatar.region.details['sim_port'])
+        print avatar.region.details['sim_port'].__dict__
+        
+        
         #begin UDP communication
         self.host = IHost((avatar.region.details['sim_ip'],
                     avatar.region.details['sim_port']))
