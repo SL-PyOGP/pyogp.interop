@@ -84,7 +84,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         #print self.client.region.details
         
         # test that rez_avatar/place contains the proper respose data
-        assert self.avatar.region.details['seed_capability'] != None or self.avatar.region.details['seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
+        assert self.avatar.region.details['region_seed_capability'] != None or self.avatar.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
         assert self.avatar.region.details['look_at'] != None or self.avatar.region.details['look_at'] != {}, "Rez_avatar/place returned no look_at"
         assert self.avatar.region.details['sim_ip'] != None or self.avatar.region.details['sim_ip'] != {}, "Rez_avatar/place returned no sim_ip"
         assert self.avatar.region.details['sim_port'] != None or self.avatar.region.details['sim_port'] != {}, "Rez_avatar/place returned no sim_port"

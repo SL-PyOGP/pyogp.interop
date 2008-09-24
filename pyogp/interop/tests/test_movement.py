@@ -115,7 +115,7 @@ class OGPTeleportTest(unittest.TestCase):
         
         avatar = place(region)
 
-        assert avatar.region.details['seed_capability'] != None or avatar.region.details['seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
+        assert avatar.region.details['region_seed_capability'] != None or avatar.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
         assert avatar.region.details['look_at'] != None or avatar.region.details['look_at'] != {}, "Rez_avatar/place returned no look_at"
         assert avatar.region.details['sim_ip'] != None or avatar.region.details['sim_ip'] != {}, "Rez_avatar/place returned no sim_ip"
         assert avatar.region.details['sim_port'] != None or avatar.region.details['sim_port'] != {}, "Rez_avatar/place returned no sim_port"

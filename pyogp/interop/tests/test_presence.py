@@ -160,7 +160,7 @@ class OGPPresenceTest(unittest.TestCase):
 
         # let's test something to prove presence on the sim
 
-        assert avatar.region.details['seed_capability'] != None or avatar.region.details['seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
+        assert avatar.region.details['region_seed_capability'] != None or avatar.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
         assert len(packets) > 0
         self.assertNotEqual(last_ping, 0)
         self.assert_("CoarseLocationUpdate" in packets)

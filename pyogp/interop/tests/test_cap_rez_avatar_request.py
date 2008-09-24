@@ -130,7 +130,7 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.assertNotEquals(result, None, 'post to cap returned nothing')
     
     #############
-        # Success response: { connect: "True", rez_avatar/rez: url , seed_capability: url }
+        # Success response: { connect: "True", rez_avatar/rez: url , region_seed_capability: url }
 
     
     def check_failure_response(self, result):
@@ -162,7 +162,7 @@ class RezAvatarRequestTests(unittest.TestCase):
         
         self.check_response(result)
         
-        valid_keys = ['connect', 'rez_avatar/rez', 'seed_capability', 'sim_host', 'sim_port', 'sim_ip', 'region_id', 'region_x', 'region_y', 'sim_access']
+        valid_keys = ['connect', 'rez_avatar/rez', 'region_seed_capability', 'sim_host', 'sim_port', 'sim_ip', 'region_id', 'region_x', 'region_y', 'sim_access']
         # sim_ip is currently coming back ~e 9/15/08
         fail = 0 
         extra_keys = ''
@@ -190,7 +190,7 @@ class RezAvatarRequestTests(unittest.TestCase):
         result = self.postToCap(self.full_parameters)
         
         self.check_response(result)
-        self.assert_(result.has_key('seed_capability')), 'response is missing seed_capability attribute'
+        self.assert_(result.has_key('region_seed_capability')), 'response is missing seed_capability attribute'
         
     def test_rez_avatar_request_fail_connect(self):
         """ posting to rez_avatar/request with no args, parse for failure response """

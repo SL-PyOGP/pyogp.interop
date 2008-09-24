@@ -93,7 +93,7 @@ class RezAvatarPlaceTests(unittest.TestCase):
     def check_response(self, result):
         """ check for the existence of the correct parameters in the cap response """
 
-        # Success response: { connect: bool , seed_capability: url string , look_at: [x real, y real, z real, ] , position: [x real, y real, z real, ]}
+        # Success response: { connect: bool , region_seed_capability: url string , look_at: [x real, y real, z real, ] , position: [x real, y real, z real, ]}
         
         self.assertNotEquals(result, None, 'empty response')
 
@@ -117,7 +117,7 @@ class RezAvatarPlaceTests(unittest.TestCase):
         
         self.check_response(result)
         
-        valid_keys = ['connect', 'look_at', 'position', 'seed_capability', 'sim_host', 'sim_port', 'region_id', 'region_x', 'region_y', 'sim_access']
+        valid_keys = ['connect', 'look_at', 'position', 'region_seed_capability', 'sim_host', 'sim_port', 'region_id', 'region_x', 'region_y', 'sim_access']
         fail = 0 
         extra_keys = ''
         
@@ -148,7 +148,7 @@ class RezAvatarPlaceTests(unittest.TestCase):
                      result['position'][1] >= 0 and 
                      result['position'][2] >= 0)
                      
-        self.assert_(result['seed_capability'] != None)
+        self.assert_(result['region_seed_capability'] != None)
         
         # test region info
         '''

@@ -114,7 +114,7 @@ class OGPTeleportTest(unittest.TestCase):
         packets_captured2 = self.maintain_sim_presence(vanishing_data, region2, place2, avatar2, 15)
         
         # now let's validate some shizz
-        assert avatar.region.details['seed_capability'] != avatar2.region.details['seed_capability']
+        assert avatar.region.details['region_seed_capability'] != avatar2.region.details['region_seed_capability']
         assert packets_captured2['TeleportProgress'] == 1
         assert packets_captured2['AgentMovementComplete'] == 1
  
@@ -157,7 +157,7 @@ class OGPTeleportTest(unittest.TestCase):
         packets_captured2 = self.maintain_sim_presence(vanishing_data, region2, place2, avatar2, 5)
         
         # now let's validate some shizz
-        # assert avatar.region.details['seed_capability'] != avatar2.region.details['seed_capability']
+        # assert avatar.region.details['region_seed_capability'] != avatar2.region.details['region_seed_capability']
         assert packets_captured2['TeleportProgress'] == 1
         assert packets_captured2['AgentMovementComplete'] == 1       
 
@@ -200,7 +200,7 @@ class OGPTeleportTest(unittest.TestCase):
         packets_captured2 = self.maintain_sim_presence(vanishing_data, region2, place2, avatar2, 5)
         
         # now let's validate some shizz
-        # assert avatar.region.details['seed_capability'] != avatar2.region.details['seed_capability']
+        # assert avatar.region.details['region_seed_capability'] != avatar2.region.details['region_seed_capability']
         assert packets_captured2['TeleportProgress'] == 1
         assert packets_captured2['AgentMovementComplete'] == 1
 
