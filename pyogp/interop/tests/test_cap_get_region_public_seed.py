@@ -75,7 +75,13 @@ class GetRegionPublicSeed(unittest.TestCase):
 
         result = self.region.get_region_public_seed()
         
-        print result
+        caps = result['capabilities']
+
+        self.assert_(result.has_key('capabilities'))
+        self.assert_(caps.has_key('rez_avatar/request'))
+        self.assert_(result['capabilities']['rez_avatar/request'] != None)
+        self.assert_(result['capabilities']['rez_avatar/request'] != {})
+        self.assert_(result['capabilities']['rez_avatar/request'] != "")
 
 def test_suite():
     from unittest import TestSuite, makeSuite
