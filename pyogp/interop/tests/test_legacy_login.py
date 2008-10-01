@@ -155,7 +155,7 @@ OGP response:
         now = start
         packets = {}
         
-        while ((now - start) < 600):
+        while ((now - start) < 60):
             msg_buf, msg_size = self.messenger.udp_client.receive_packet(self.messenger.socket)
             packet = self.messenger.receive_check(self.messenger.udp_client.get_sender(),
                                             msg_buf, msg_size)
@@ -226,12 +226,17 @@ OGP response:
 
 # for threading
 def run_sim_eqg(sim_event_queue):
-    while True:
+
+    # run for 60 seconds
+    start = time.time()
+    now = start
+    
+    while while ((now - start) < 60):
         try:
             result = sim_event_queue()
-            print 'SIM EQ: %s' % result
+            #print 'SIM EQ: %s' % result
         except Exception, e:
-            print "Sim had no events"
+            #print "Sim had no events"
             #just means nothing to get
             pass
                

@@ -36,15 +36,16 @@ import helpers
 '''
 
 write tests against agent/info, an agent domain cap
-http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#GET_Interface
+http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#GET_Interface_2
 
 '''
 
-class testCapAgentInfo(unittest.TestCase):
+class testCapAgentSession(unittest.TestCase):
 
     def setUp(self):
         init()
         
+        '''
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
         
@@ -65,10 +66,7 @@ class testCapAgentInfo(unittest.TestCase):
         #gets seedcap, and an agent that can be placed in a region
         self.agentdomain.login(credentials)
  
-        self.caps = self.agentdomain.seed_cap.get(['agent/info'])
-        
-        # initialize the cap object for use in postToCap
-        #self.capability = Capability('agent/info', self.caps['agent/info'].public_url)
+        '''
         
     def tearDown(self):
         
@@ -107,14 +105,14 @@ class testCapAgentInfo(unittest.TestCase):
     # Add moar tests
 
                      
-    def test_cap_agent_info_online(self):
+    def test_cap_agent_session(self):
         """ agent/info cap returns the right response for an online agent """
 
-        response = self.getCap()
+        print 'This resource is not available to test at this time...'
         
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
-    suite.addTest(makeSuite(testCapAgentInfo))
+    suite.addTest(makeSuite(testCapAgentSession))
     return suite
 

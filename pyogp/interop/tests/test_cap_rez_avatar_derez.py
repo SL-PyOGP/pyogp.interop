@@ -39,7 +39,8 @@ import helpers
 
 Tests for the rez_avatar/derez capability as run against simulators (acting as the agent domain)
 
-write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Derez_Avatar_.28Resource_Class.29
+write tests against the protocol as is defined at 
+http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#POST_Inferface
 '''
 
 class RezAvatarDerezTest(unittest.TestCase):
@@ -81,12 +82,12 @@ class RezAvatarDerezTest(unittest.TestCase):
         self.position = config.get('test_rez_avatar_derez', 'position') 
 
         # we can't request these caps as a client, but we can craft them ourselves
-        self.rez_avatar_url = self.target_region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/rez'
-        self.derez_avatar_url = self.start_region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/derez'
+        self.rez_avatar_url = self.start_region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/rez'
+        self.derez_avatar_url = self.target_region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/derez'
         
         # Required parameters: { rez-avatar/rez: url string, position: [x real, y real, z real, ] }              
         self.required_parameters = {
-            'rez_avatar' : self.rez_avatar_url,
+            'rez_avatar/rez' : self.rez_avatar_url,
             'position' : self.position
             }
         
@@ -130,13 +131,11 @@ class RezAvatarDerezTest(unittest.TestCase):
     def test_rez_avatar_derez_connect(self):
         """ agent is allowed to derez """
 
-        print 'Until we can maintain presence, we have nothing to do here'
-        '''
         result = self.postToCap(self.required_parameters)
         
         self.check_successful_response(result)
         self.assertEquals(result['connect'], True)
-        '''
+
 
 def test_suite():
     from unittest import TestSuite, makeSuite

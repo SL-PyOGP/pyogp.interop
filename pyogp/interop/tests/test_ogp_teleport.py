@@ -89,7 +89,7 @@ class OGPTeleportTest(unittest.TestCase):
         ad_queue_thread.start()
         
         #gets the rez_avatar/place cap
-        caps = agentdomain.seed_cap.get(['rez_avatar/place'])
+        #caps = agentdomain.seed_cap.get(['rez_avatar/place'])
         
         # try and rez on a sim
         region = Region(self.start_region_uri)

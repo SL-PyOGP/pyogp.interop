@@ -72,40 +72,33 @@ class OGPPresenceTest(unittest.TestCase):
         self.messenger = UDPDispatcher()
         self.host = None
 
-    def test_base_presence(self):
-    
         credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
-        agentdomain = AgentDomain(self.login_uri)
+        self.agentdomain = AgentDomain(self.login_uri)
 
         #gets seedcap, and an agent that can be placed in a region
-        agent = agentdomain.login(credentials)
-        assert agentdomain.seed_cap != None or agentdomain.seed_cap != {}, "Login to agent domain failed"
-
+        agent = self.agentdomain.login(credentials)
+        
         #gets the rez_avatar/place cap
-        caps = agentdomain.seed_cap.get(['rez_avatar/place'])
+        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
         
         # try and connect to a sim
-        region = Region(self.start_region_uri)
-        place = IPlaceAvatar(agentdomain)
+        self.region = Region(self.start_region_uri)
+        place = IPlaceAvatar(self.agentdomain)
         
-        avatar = place(region)
+        self.avatar = place(self.region)
 
-        self.agent_id = avatar.region.details['agent_id']
-        self.session_id = avatar.region.details['session_id']
-        
-        print dir(avatar.region.details['sim_ip'])
-        #print avatar.region.details['sim_ip'].__dict__
-        print dir(avatar.region.details['sim_port'])
-        print avatar.region.details['sim_port'].__dict__
-        
+    def test_base_presence(self):
+    
+        self.agent_id = self.avatar.region.details['agent_id']
+        self.session_id = self.avatar.region.details['session_id']
         
         #begin UDP communication
-        self.host = IHost((avatar.region.details['sim_ip'],
-                    avatar.region.details['sim_port']))
+        self.host = IHost((self.avatar.region.details['sim_ip'],
+                    self.avatar.region.details['sim_port']))
 
         #SENDS UseCircuitCode
         msg = Message('UseCircuitCode',
-                      Block('CircuitCode', Code=avatar.region.details['circuit_code'],
+                      Block('CircuitCode', Code=self.avatar.region.details['circuit_code'],
                             SessionID=uuid.UUID(self.session_id),
                             ID=uuid.UUID(self.agent_id)))
         self.messenger.send_reliable(msg, self.host, 0)
@@ -116,7 +109,7 @@ class OGPPresenceTest(unittest.TestCase):
         msg = Message('CompleteAgentMovement',
                       Block('AgentData', AgentID=uuid.UUID(self.agent_id),
                             SessionID=uuid.UUID(self.session_id),
-                            CircuitCode=avatar.region.details['circuit_code']))
+                            CircuitCode=self.avatar.region.details['circuit_code']))
         self.messenger.send_reliable(msg, self.host, 0)
 
         #SENDS UUIDNameRequest
@@ -166,22 +159,22 @@ class OGPPresenceTest(unittest.TestCase):
 
         # let's test something to prove presence on the sim
 
-        assert avatar.region.details['region_seed_capability'] != None or avatar.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
+        assert self.avatar.region.details['region_seed_capability'] != None or self.avatar.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
         assert len(packets) > 0
         self.assertNotEqual(last_ping, 0)
         self.assert_("CoarseLocationUpdate" in packets)
         self.assert_("StartPingCheck" in packets) 
         self.assert_("AgentDataUpdate" in packets) 
-        
-        print str(packets)
        
     def tearDown(self):
-        msg = Message('LogoutRequest',
+        
+        if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in         
+            msg = Message('LogoutRequest',
                       Block('AgentData', AgentID=uuid.UUID(self.agent_id),
                             SessionID=uuid.UUID(self.session_id)
                             )
                       )
-        self.messenger.send_message(msg, self.host)
+            self.messenger.send_message(msg, self.host)
 
     def send_agent_update(self, agent_id, session_id):
         msg = Message('AgentUpdate',

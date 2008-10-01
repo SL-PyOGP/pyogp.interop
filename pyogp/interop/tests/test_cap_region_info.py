@@ -93,13 +93,14 @@ class testCapRegionInfo(unittest.TestCase):
 ###################################
     # region/info is implemented, no reason to write tests for it
 
-'''
+
     def test_cap_region_info_base(self):
         """ agent/info cap returns the right reponse with the right inputs params """
         
-        print 'Until we can request the url for region/info, we cannot test this'        
+        print 'This resource is not available to test at this time...'        
         pass
 
+'''
     def test_cap_region_info_online(self):
         """ agent/info cap returns the right response for an online agent """
 

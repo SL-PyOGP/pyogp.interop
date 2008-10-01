@@ -31,7 +31,6 @@ from pyogp.lib.base.regiondomain import Region
 import helpers
 
 '''
-# in progress, tests are skipped
 
 Tests for a get against the region public_seed:
 * region_url given to rez_avatar/place is now a public_seed which when 

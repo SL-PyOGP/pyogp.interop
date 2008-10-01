@@ -35,7 +35,7 @@ from helpers import logout
 '''
 Tests for the rez_avatar/place capability as run against simulators (acting as the client)
 
-write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Place_Avatar_.28Resource_Class.29
+http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#POST_Interface
 '''
 
 class RezAvatarPlaceTests(unittest.TestCase):
@@ -66,9 +66,10 @@ class RezAvatarPlaceTests(unittest.TestCase):
          
         # required_parameters: { region_url: url string, position: [x real, y real, z real, ] }
         self.required_parameters = {
-            'region_url' : self.region_uri,
+            'region_url' : self.region_uri + "/public_seed",
             'position' : config.get('test_rez_avatar_place', 'position')
             }
+            
         self.caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
         
         # initialize the cap object for use in postToCap
@@ -94,8 +95,8 @@ class RezAvatarPlaceTests(unittest.TestCase):
         """ check for the existence of the correct parameters in the cap response """
 
         # Success response: { connect: bool , region_seed_capability: url string , look_at: [x real, y real, z real, ] , position: [x real, y real, z real, ]}
-        
         self.assertNotEquals(result, None, 'empty response')
+        self.assertNotEquals(result, "()", 'empty response')
 
     def check_failure_response(self, result):
         """ tests the failure response for the proper content """
@@ -108,8 +109,7 @@ class RezAvatarPlaceTests(unittest.TestCase):
 #           Test Cases            #
 ###################################
 # these these tests act as a client, they run more slowly. include as much validation as possible into one test function
-
-                     
+                    
     def test_rez_avatar_place_required(self):
         """ agent is allowed to rez """
 
@@ -117,18 +117,27 @@ class RezAvatarPlaceTests(unittest.TestCase):
         
         self.check_response(result)
         
-        valid_keys = ['connect', 'look_at', 'position', 'region_seed_capability', 'sim_host', 'sim_port', 'region_id', 'region_x', 'region_y', 'sim_access']
+        valid_keys = ['connect', 'look_at', 'position', 'public_region_seed_capability', 'sim_host', 'sim_port', 'region_id', 'region_x', 'region_y', 'sim_access', 'position']
         fail = 0 
         extra_keys = ''
+        missing_keys = ''
         
         for key in result:
             try:
                 valid_keys.index(key) # if the key is in our valid list, sweet
             except:
-                fail = 1
+                fail_extra = 1
                 extra_keys = extra_keys + ' ' + key
-        
-        self.assertEquals(fail, 0, 'response has additional keys: ' + extra_keys)
+
+        for key in valid_keys:
+            try:
+                result.index(key) # if the key is in our valid list, sweet
+            except:
+                fail_missing = 1
+                missing_keys = missing_keys + ' ' + key
+       
+        self.assertEquals(fail_extra, 0, 'response has additional keys: ' + extra_keys)
+        self.assertEquals(fail_missing, 0, 'response is missing keys: ' + missing_keys)       
         
         self.assertEquals(result['connect'], True)
 
@@ -150,32 +159,20 @@ class RezAvatarPlaceTests(unittest.TestCase):
                      
         self.assert_(result['region_seed_capability'] != None)
         
-        # test region info
-        '''
-        ; Note: These fields are region information
-        region_id: uuid,
-        region_x: int,
-        region_y: int,
-        sim_access: 'PG' | 'Mature'
-        '''
-
         assert result['sim_access'] == 'PG' or result['sim_access'] == 'Mature'
-        
-   
+
     def test_rez_avatar_place_nocontent(self):
         """ agent is allowed to rez """
 
         result = self.postToCap({})
         
-        # print result
-        # the library is trapping the 400, perhaps it should be allowed to filter here for testing? 
         self.check_response(result)
         #self.assertRaises(HTTPError, self.postToCap(self.required_parameters))
 
     def test_rez_avatar_place_invalid_region_uri(self):
         """ agent is allowed to rez """
 
-        self.required_parameters['region_url'] = 'http://imnotreal.net'
+        self.required_parameters['region_url'] = 'http://sim2.vaak.lindenlab.com:13009/imtotallyfake'
         result = self.postToCap(self.required_parameters)
 
         # the library is trapping the 400, perhaps it should be allowed to filter here for testing? 

@@ -37,7 +37,7 @@ from helpers import logout
 '''
 Tests for the rez_avatar/request capability as run against simulators (acting as the agent domain)
 
-write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Request_Rez_Avatar_.28Resource_Class.29
+write tests against the protocol as is defined at http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#POST_Interface_2
 '''
 
 class RezAvatarRequestTests(unittest.TestCase):
@@ -59,17 +59,19 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.password = self.config.get(self.test_setup_config_name, 'password')
         self.login_uri = self.config.get(self.test_setup_config_name, 'login_uri')        
         self.region_uri = self.config.get('test_interop_regions', 'start_region_uri') 
+        
+        self.test_region_uri = self.config.get('test_interop_regions', 'target_region_uri') 
 
-        # first establish an AD connection and get seed_cap for mtg
         # <start>
+        # we need to get agent_id, session_id, secure_session_if and circuit code from somewhere. let's get it from region1, then test against region2
+        
+        # first establish an AD connection and get seed_cap for mtg
         self.agentdomain = AgentDomain(self.login_uri)
         
         credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
 
         #gets seedcap, and an agent that can be placed in a region
         self.agentdomain.login(credentials)
- 
-        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
 
         # try and connect to a sim
         self.region = Region(self.region_uri)
@@ -77,11 +79,12 @@ class RezAvatarRequestTests(unittest.TestCase):
 
         self.avatar = place(self.region)
         # </start>
-       
-        # we can't request this cap, but we can craft it ourselves
-        self.rez_avatar_request_url = self.region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/request'
+
+        # this is the region we will test against
+        self.region2 = Region(self.test_region_uri)        
+        result = self.region2.get_region_public_seed()
         
-        # Required parameters: { agent_id: uuid, first_name: string , last_name: string }       
+        caps = result['capabilities']     
         
         self.required_parameters = {
             'agent_id' : self.avatar.region.details['agent_id'],
@@ -107,8 +110,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         self.full_parameters['src_estate_id'] = 1
         
         # but we can craft the url and manual test things, as we can just post to the sim the info without anoy other context
-        self.capability = Capability('rez_avatar/request', self.rez_avatar_request_url)
-
+        self.capability = Capability('rez_avatar/request', caps['rez_avatar/request'])
+        
     def tearDown(self):
         
         if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in 
@@ -116,12 +119,8 @@ class RezAvatarRequestTests(unittest.TestCase):
             
     def postToCap(self, arguments):
     
-        try:
-            result = self.capability.POST(arguments)
-        except Exception, e:
-            print 'Exception: ' + e.message + ' ' + str(e.args)
-            return
-        
+        result = self.capability.POST(arguments)
+            
         return result
 
     def check_response(self, result):
@@ -166,15 +165,24 @@ class RezAvatarRequestTests(unittest.TestCase):
         # sim_ip is currently coming back ~e 9/15/08
         fail = 0 
         extra_keys = ''
+        missing_keys = ''
         
         for key in result:
             try:
                 valid_keys.index(key) # if the key is in our valid list, sweet
             except:
-                fail = 1
+                fail_extra = 1
                 extra_keys = extra_keys + ' ' + key
-        
-        self.assertEquals(fail, 0, 'response has additional keys: ' + extra_keys)
+
+        for key in valid_keys:
+            try:
+                result.index(key) # if the key is in our valid list, sweet
+            except:
+                fail_missing = 1
+                missing_keys = missing_keys + ' ' + key
+       
+        self.assertEquals(fail_extra, 0, 'response has additional keys: ' + extra_keys)
+        self.assertEquals(fail_missing, 0, 'response is missing keys: ' + missing_keys)     
 
     def test_rez_avatar_request_full(self):
         """ Agent is allowed to connect """
@@ -224,7 +232,8 @@ class RezAvatarRequestTests(unittest.TestCase):
         result = self.postToCap(self.required_parameters)
                 
         self.check_response(result)
-        self.assertEquals(result['connect'], True, 'connect attribute is not True')
+        self.assertEquals(result['connect'], False, 'connect attribute is not True')
+        self.assertEquals(result['message'], 'No valid agent id.', 'Invalid message in response')
 
     def test_rez_avatar_request_invalid_agent_id(self):
         """ checks for proper response when agent_id is invalid """

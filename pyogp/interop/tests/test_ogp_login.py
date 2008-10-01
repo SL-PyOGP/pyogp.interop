@@ -73,12 +73,15 @@ class AuthOGPLoginTest(unittest.TestCase):
         #gets seedcap, and an agent that can be placed in a region
         assert self.agentdomain.seed_cap.public_url != None or self.agentdomain.seed_cap.public_url != {}, "Login to agent domain failed"
  
-        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
+        #caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
 
         # try and connect to a sim
         self.region = Region(self.region_uri)
+        
+        print "I am at spot 1"
         place = IPlaceAvatar(self.agentdomain)
-
+        
+        print "I am at spot 2"
         self.avatar  = place(self.region)
         
         #print self.client.region.details
@@ -97,7 +100,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         assert self.avatar.region.details['session_id'] != None or self.avatar.region.details['session_id'] != {}, "Rez_avatar/place returned no session_id"
         assert self.avatar.region.details['secure_session_id'] != None or self.avatar.region.details['secure_session_id'] != {}, "Rez_avatar/place returned no secure_session_id"
         assert self.avatar.region.details['circuit_code'] != None or self.avatar.region.details['circuit_code'] != {}, "Rez_avatar/place returned no cicuit_code"
-
+ 
     def test_auth_base_account(self):
         """ auth with an account which should just work """
 
@@ -112,7 +115,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         assert data['authenticated'] == True
         # this is the AD seed cap
         assert data['agent_seed_capability'] != None
-        
+  
     def test_auth_unknown_account(self):
         """ auth with an account which should just never work """
         
@@ -128,7 +131,7 @@ class AuthOGPLoginTest(unittest.TestCase):
         assert data['authenticated'] == False
         assert data['message'] == 'Agent does not exist'
         assert data['reason'] == 'data'
-
+ 
                 
     # Other tests to write:
 

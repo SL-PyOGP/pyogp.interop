@@ -38,7 +38,7 @@ from helpers import logout
 Tests for the rez_avatar/rez capability as run against simulators (acting as the agent domain)
 
 write tests against the protocol as is defined at 
-http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Rez_Avatar_.28Resource_Class.29
+http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#POST_Interface_3
 '''
 
 class RezAvatarRezTests(unittest.TestCase):
