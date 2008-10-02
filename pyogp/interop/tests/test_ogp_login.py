@@ -78,10 +78,8 @@ class AuthOGPLoginTest(unittest.TestCase):
         # try and connect to a sim
         self.region = Region(self.region_uri)
         
-        print "I am at spot 1"
         place = IPlaceAvatar(self.agentdomain)
         
-        print "I am at spot 2"
         self.avatar  = place(self.region)
         
         #print self.client.region.details
