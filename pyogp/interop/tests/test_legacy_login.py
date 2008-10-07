@@ -231,7 +231,7 @@ def run_sim_eqg(sim_event_queue):
     start = time.time()
     now = start
     
-    while while ((now - start) < 60):
+    while ((now - start) < 60):
         try:
             result = sim_event_queue()
             #print 'SIM EQ: %s' % result
