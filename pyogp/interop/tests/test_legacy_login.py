@@ -58,10 +58,10 @@ class AuthLegacyLoginTest(unittest.TestCase):
                 
         self.test_setup_config_name = 'test_interop_account'
         
-        self.firstname = 'Enus'
-        self.lastname = 'Linden'
-        self.password = '3nusandtheBots'
-        self.login_uri = "https://login.siva.lindenlab.com/cgi-bin/login.cgi"        
+        self.firstname = self.config.get(self.test_setup_config_name, 'firstname')
+        self.lastname = self.config.get(self.test_setup_config_name, 'lastname')
+        self.password = self.config.get(self.test_setup_config_name, 'password')
+        self.login_uri = "https://login.agni.lindenlab.com/cgi-bin/login.cgi"        
         self.region_uri = self.config.get('test_interop_regions', 'start_region_uri') 
 
         self.host = None
@@ -79,7 +79,7 @@ class AuthLegacyLoginTest(unittest.TestCase):
         self.login = LegacyLogin(self.login_uri)
         
         login_params = PlainPasswordCredential(self.firstname, self.lastname, self.password).get_xmlrpc_login_params()
-        login_params['start'] = 'uri:Ahern&128&128&128'
+        login_params['start'] = 'uri:Hazzard County&128&128&128'
 
         #gets seedcap, and an agent that can be placed in a region
         avatar = self.login.login(login_params, self.region)
@@ -160,8 +160,8 @@ OGP response:
             packet = self.messenger.receive_check(self.messenger.udp_client.get_sender(),
                                             msg_buf, msg_size)
             if packet != None:
-                #print 'Received: ' + packet.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
-                #                                 str(self.messenger.udp_client.sender.port)
+                print 'Received: ' + packet.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
+                                                  str(self.messenger.udp_client.sender.port)
 
                 #MESSAGE HANDLERS
                 if packet.name == 'RegionHandshake':
@@ -179,7 +179,7 @@ OGP response:
                 print 'No message'
                 
             if self.messenger.has_unacked():
-                #print 'Acking'
+                print 'Acking'
                 self.messenger.process_acks()
                 self.send_agent_update(self.agent_id, self.session_id)
         
@@ -239,7 +239,6 @@ def run_sim_eqg(sim_event_queue):
             #print "Sim had no events"
             #just means nothing to get
             pass
-        now = time.time()
                
 def test_suite():
     from unittest import TestSuite, makeSuite
