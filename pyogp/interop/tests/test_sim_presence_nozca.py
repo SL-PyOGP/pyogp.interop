@@ -116,6 +116,8 @@ class OGPPresenceTest(unittest.TestCase):
                       )
         self.messenger.send_message(msg, self.host)
 
+        self.send_agent_update(self.agent_id, self.session_id)
+
         #print "Entering loop"
         last_ping = 0
         start = time.time()
@@ -137,7 +139,7 @@ class OGPPresenceTest(unittest.TestCase):
                 elif packet.name == 'StartPingCheck':
                     self.send_complete_ping_check(last_ping)
                     last_ping += 1
-                    
+                   
                 if packet.name not in packets:
                     packets[packet.name] = 1
                 else: 
@@ -149,7 +151,7 @@ class OGPPresenceTest(unittest.TestCase):
                 
             now = time.time()
                 
-        if self.messenger.has_unacked():
+            if self.messenger.has_unacked():
                 #print 'Acking'
                 self.messenger.process_acks()
                 self.send_agent_update(self.agent_id, self.session_id)
