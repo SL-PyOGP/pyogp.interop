@@ -24,23 +24,12 @@ from pkg_resources import resource_stream
 import time
 import uuid
 
-#from pyogp.lib.base.credentials import PlainPasswordCredential
-#from pyogp.lib.base.agentdomain import AgentDomain
-#from pyogp.lib.base.regiondomain import Region
-#from pyogp.lib.base.registration import init
 from pyogp.lib.base.agent import Agent
-
-#from pyogp.lib.base.interfaces import IPlaceAvatar
-
-#from pyogp.lib.base.OGPLogin import OGPLogin
 from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
 from pyogp.lib.base.message.message import Message, Block
-#from pyogp.lib.base.message.interfaces import IHost
 from pyogp.lib.base.message.circuit import Host
 from pyogp.lib.base.message.types import MsgType
 
-#from zope.component import provideUtility
-#from pyogp.lib.base.network.interfaces import IUDPClient
 from pyogp.lib.base.network.net import NetUDPClient
 
 import helpers
@@ -52,8 +41,6 @@ class OGPPresenceTest(unittest.TestCase):
     target_region_uri = None
 
     def setUp(self):
-        #init() # initialize the framework        
-        #provideUtility(NetUDPClient(), IUDPClient)
 
         self.agent_id = ''
         self.session_id = ''
@@ -80,9 +67,8 @@ class OGPPresenceTest(unittest.TestCase):
         self.agent.firstname = self.firstname
         self.agent.lastname = self.lastname
         self.agent.password = self.password
-        #agent.credentials = PlainPasswordCredential(agent.firstname, agent.lastname, agent.password)
+
         self.agent.login(self.login_uri, self.start_region_uri)
-    # let's log in an agent to the agentdomain shall we
 
     def test_base_presence(self):
     

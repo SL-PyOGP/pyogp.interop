@@ -1,5 +1,5 @@
 """
-@file test_presence.py
+@file test_sim_presence.py
 @date 2008-09-16
 Contributors can be viewed at:
 http://svn.secondlife.com/svn/linden/projects/2008/pyogp/CONTRIBUTORS.txt 
@@ -24,21 +24,12 @@ from pkg_resources import resource_stream
 import time
 import uuid
 
-from pyogp.lib.base.credentials import PlainPasswordCredential
-from pyogp.lib.base.agentdomain import AgentDomain
-from pyogp.lib.base.regiondomain import Region
-from pyogp.lib.base.registration import init
-
-from pyogp.lib.base.interfaces import IPlaceAvatar
-
-from pyogp.lib.base.OGPLogin import OGPLogin
+from pyogp.lib.base.agent import Agent
 from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
 from pyogp.lib.base.message.message import Message, Block
-from pyogp.lib.base.message.interfaces import IHost
+from pyogp.lib.base.message.circuit import Host
 from pyogp.lib.base.message.types import MsgType
 
-from zope.component import provideUtility
-from pyogp.lib.base.network.interfaces import IUDPClient
 from pyogp.lib.base.network.net import NetUDPClient
 
 import helpers
@@ -50,8 +41,6 @@ class OGPPresenceTest(unittest.TestCase):
     target_region_uri = None
 
     def setUp(self):
-        init() # initialize the framework        
-        provideUtility(NetUDPClient(), IUDPClient)
 
         self.agent_id = ''
         self.session_id = ''
@@ -72,33 +61,27 @@ class OGPPresenceTest(unittest.TestCase):
         self.messenger = UDPDispatcher()
         self.host = None
 
-        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
-        self.agentdomain = AgentDomain(self.login_uri)
+        self.agent = Agent()
 
-        #gets seedcap, and an agent that can be placed in a region
-        agent = self.agentdomain.login(credentials)
-        
-        #gets the rez_avatar/place cap
-        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
-        
-        # try and connect to a sim
-        self.region = Region(self.start_region_uri)
-        place = IPlaceAvatar(self.agentdomain)
-        
-        self.avatar = place(self.region)
+        # establish agent credentials
+        self.agent.firstname = self.firstname
+        self.agent.lastname = self.lastname
+        self.agent.password = self.password
+
+        self.agent.login(self.login_uri, self.start_region_uri)
 
     def test_base_presence(self):
     
-        self.agent_id = self.avatar.region.details['agent_id']
-        self.session_id = self.avatar.region.details['session_id']
+        self.agent_id = self.agent.region.details['agent_id']
+        self.session_id = self.agent.region.details['session_id']
         
         #begin UDP communication
-        self.host = IHost((self.avatar.region.details['sim_ip'],
-                    self.avatar.region.details['sim_port']))
+        self.host = Host((self.agent.region.details['sim_ip'],
+                    self.agent.region.details['sim_port']))
 
         #SENDS UseCircuitCode
         msg = Message('UseCircuitCode',
-                      Block('CircuitCode', Code=self.avatar.region.details['circuit_code'],
+                      Block('CircuitCode', Code=self.agent.region.details['circuit_code'],
                             SessionID=uuid.UUID(self.session_id),
                             ID=uuid.UUID(self.agent_id)))
         self.messenger.send_reliable(msg, self.host, 0)
@@ -109,7 +92,7 @@ class OGPPresenceTest(unittest.TestCase):
         msg = Message('CompleteAgentMovement',
                       Block('AgentData', AgentID=uuid.UUID(self.agent_id),
                             SessionID=uuid.UUID(self.session_id),
-                            CircuitCode=self.avatar.region.details['circuit_code']))
+                            CircuitCode=self.agent.region.details['circuit_code']))
         self.messenger.send_reliable(msg, self.host, 0)
 
         #SENDS UUIDNameRequest
@@ -119,6 +102,8 @@ class OGPPresenceTest(unittest.TestCase):
                       )
         self.messenger.send_message(msg, self.host)
 
+        self.send_agent_update(self.agent_id, self.session_id)
+
         #print "Entering loop"
         last_ping = 0
         start = time.time()
@@ -126,13 +111,13 @@ class OGPPresenceTest(unittest.TestCase):
         packets = {}
         
         # run for 45 seonds
-        while ((now - start) < 15):
+        while ((now - start) < 45):
             msg_buf, msg_size = self.messenger.udp_client.receive_packet(self.messenger.socket)
             packet = self.messenger.receive_check(self.messenger.udp_client.get_sender(),
                                             msg_buf, msg_size)
             if packet != None:
-                print 'Received: ' + packet.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
-                                                  str(self.messenger.udp_client.sender.port)
+                #print 'Received: ' + packet.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
+                                                  #str(self.messenger.udp_client.sender.port)
 
                 #MESSAGE HANDLERS
                 if packet.name == 'RegionHandshake':
@@ -140,7 +125,7 @@ class OGPPresenceTest(unittest.TestCase):
                 elif packet.name == 'StartPingCheck':
                     self.send_complete_ping_check(last_ping)
                     last_ping += 1
-                    
+                   
                 if packet.name not in packets:
                     packets[packet.name] = 1
                 else: 
@@ -152,14 +137,14 @@ class OGPPresenceTest(unittest.TestCase):
                 
             now = time.time()
                 
-        if self.messenger.has_unacked():
+            if self.messenger.has_unacked():
                 #print 'Acking'
                 self.messenger.process_acks()
                 self.send_agent_update(self.agent_id, self.session_id)
 
         # let's test something to prove presence on the sim
 
-        assert self.avatar.region.details['region_seed_capability'] != None or self.avatar.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
+        assert self.agent.region.details['region_seed_capability'] != None or self.agent.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
         assert len(packets) > 0
         self.assertNotEqual(last_ping, 0)
         self.assert_("CoarseLocationUpdate" in packets)
@@ -168,7 +153,7 @@ class OGPPresenceTest(unittest.TestCase):
        
     def tearDown(self):
         
-        if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in         
+        if self.agent.agentdomain.connectedStatus: # need a flag in the lib for when an agent has logged in         
             msg = Message('LogoutRequest',
                       Block('AgentData', AgentID=uuid.UUID(self.agent_id),
                             SessionID=uuid.UUID(self.session_id)
