@@ -26,7 +26,6 @@ from pkg_resources import resource_stream
 from pyogp.lib.base.agent import Agent
 from pyogp.lib.base.agentdomain import AgentDomain
 
-
 # pyogp.interop
 from helpers import logout
 
