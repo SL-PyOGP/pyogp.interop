@@ -24,12 +24,10 @@ import ConfigParser
 from pkg_resources import resource_stream
 
 # pygop
-from pyogp.lib.base.registration import init
+from pyogp.lib.base.agent import Agent
+from pyogp.lib.base.agentdomain import AgentDomain, EventQueue
 from pyogp.lib.base.caps import Capability
-from pyogp.lib.base.credentials import PlainPasswordCredential
-from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
-from pyogp.lib.base.interfaces import IPlaceAvatar
 
 # pyogp.interop
 import helpers
@@ -47,7 +45,6 @@ class RezAvatarDerezTest(unittest.TestCase):
     """ test posting to rez_avatar/derez for a simulator, acting as the region domain """
 
     def setUp(self):
-        init()
         
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -63,26 +60,25 @@ class RezAvatarDerezTest(unittest.TestCase):
         
         # first establish an AD connection and get seed_cap for mtg
         # <start>
-        self.agentdomain = AgentDomain(self.login_uri)
-        
-        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+        agent = Agent()
 
-        #gets seedcap, and an agent that can be placed in a region
-        self.agentdomain.login(credentials)
+        # establish agent credentials
+        agent.setCredentials(self.firstname, self.lastname, self.password)
+
+        # initialize an agent domain object
+        self.agentdomain = AgentDomain(self.login_uri)  
+        self.agentdomain.login(agent.credentials)
  
         caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
 
-        # try and connect to a sim
-        self.region = Region(self.start_region_uri)
-        place = IPlaceAvatar(self.agentdomain)
-
-        self.avatar = place(self.region)
+        # place the avatar on a region via the agent domain
+        self.region = Region(self.region_uri)
+        self.region.details = self.agentdomain.place_avatar(self.region.region_uri)
         # </start>
-        
-        self.position = config.get('test_rez_avatar_derez', 'position') 
 
-        # get the derez cap by calling the request cap on the region  
-        result = self.region.get_region_public_seed()
+        # this is the region we will test against
+        self.region2 = Region(self.test_region_uri)        
+        result = self.region2.get_region_public_seed()
         
         caps = result['capabilities']     
         

@@ -1,5 +1,5 @@
 """
-@file test_cap_agent_info.py
+@file test_ogp_cap_agent_info.py
 @date 2008-09-16
 Contributors can be viewed at:
 http://svn.secondlife.com/svn/linden/projects/2008/pyogp/CONTRIBUTORS.txt 
@@ -24,11 +24,9 @@ import ConfigParser
 from pkg_resources import resource_stream
 
 # pygop
-from pyogp.lib.base.registration import init
-from pyogp.lib.base.caps import Capability
-from pyogp.lib.base.credentials import PlainPasswordCredential
+from pyogp.lib.base.agent import Agent
 from pyogp.lib.base.agentdomain import AgentDomain
-from pyogp.lib.base.regiondomain import Region
+from pyogp.lib.base.caps import Capability
 
 # pyogp.interop
 import helpers
@@ -43,7 +41,6 @@ http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#GET_Interface
 class testCapAgentInfo(unittest.TestCase):
 
     def setUp(self):
-        init()
         
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -57,13 +54,14 @@ class testCapAgentInfo(unittest.TestCase):
         self.region_uri = config.get('test_interop_regions', 'start_region_uri') 
 
         # first establish an AD connection and get seed_cap for mtg
-        # <start>
-        self.agentdomain = AgentDomain(self.login_uri)
-        
-        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+        agent = Agent()
 
-        #gets seedcap, and an agent that can be placed in a region
-        self.agentdomain.login(credentials)
+        # establish agent credentials
+        agent.setCredentials(self.firstname, self.lastname, self.password)
+
+        # initialize an agent domain object
+        self.agentdomain = AgentDomain(self.login_uri)  
+        self.agentdomain.login(agent.credentials)
  
         self.caps = self.agentdomain.seed_cap.get(['agent/info'])
         
@@ -111,6 +109,7 @@ class testCapAgentInfo(unittest.TestCase):
         """ agent/info cap returns the right response for an online agent """
 
         response = self.getCap()
+        print response
         
 def test_suite():
     from unittest import TestSuite, makeSuite

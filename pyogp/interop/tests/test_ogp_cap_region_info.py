@@ -23,7 +23,6 @@ import unittest
 import ConfigParser
 from pkg_resources import resource_stream
 
-from pyogp.lib.base.registration import init
 from pyogp.lib.base.caps import Capability
 
 # pyogp.interop
@@ -40,7 +39,6 @@ http://wiki.secondlife.com/wiki/Open_Grid_Protocol#Region_Information_.28Resourc
 class testCapRegionInfo(unittest.TestCase):
 
     def setUp(self):
-        init()
         
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -52,7 +50,7 @@ class testCapRegionInfo(unittest.TestCase):
         
         self.region_uri = config.get('test_interop_regions', 'start_region_uri')
        
-        self.client = Agent()
+        #self.client = Agent()
         # will want to post the request for the region/info cap to the sim seedcap, and GET it
         
     def tearDown(self):

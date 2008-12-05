@@ -113,7 +113,7 @@ class RezAvatarRequestTests(unittest.TestCase):
         
     def tearDown(self):
         
-        if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in 
+        if self.agentdomain.connectedStatus: # need a flag in the lib for when an agent has logged in 
             logout(self.agentdomain)
             
     def postToCap(self, arguments):

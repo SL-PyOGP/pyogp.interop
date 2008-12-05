@@ -24,11 +24,6 @@ import ConfigParser
 from pkg_resources import resource_stream
 
 # pygop
-from pyogp.lib.base.registration import init
-from pyogp.lib.base.caps import Capability
-from pyogp.lib.base.credentials import PlainPasswordCredential
-from pyogp.lib.base.agentdomain import AgentDomain
-from pyogp.lib.base.regiondomain import Region
 
 # pyogp.interop
 import helpers
@@ -43,7 +38,6 @@ http://wiki.secondlife.com/wiki/OGP_Teleport_Draft_3#GET_Interface_2
 class testCapAgentSession(unittest.TestCase):
 
     def setUp(self):
-        init()
         
         '''
         config = ConfigParser.ConfigParser()
