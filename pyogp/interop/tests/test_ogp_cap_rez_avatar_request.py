@@ -24,12 +24,10 @@ import ConfigParser
 from pkg_resources import resource_stream
 
 # pygop
-from pyogp.lib.base.registration import init
+from pyogp.lib.base.agent import Agent
+from pyogp.lib.base.agentdomain import AgentDomain, EventQueue
 from pyogp.lib.base.caps import Capability
-from pyogp.lib.base.credentials import PlainPasswordCredential
-from pyogp.lib.base.agentdomain import AgentDomain
 from pyogp.lib.base.regiondomain import Region
-from pyogp.lib.base.interfaces import IPlaceAvatar
 
 # pyogp.interop
 from helpers import logout
@@ -44,7 +42,6 @@ class RezAvatarRequestTests(unittest.TestCase):
     """ test posting to rez_avatar/request for a simulator, acting as the region domain """
     
     def setUp(self):
-        init()
 
         self.config = ConfigParser.ConfigParser()
         self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -66,18 +63,20 @@ class RezAvatarRequestTests(unittest.TestCase):
         # we need to get agent_id, session_id, secure_session_if and circuit code from somewhere. let's get it from region1, then test against region2
         
         # first establish an AD connection and get seed_cap for mtg
-        self.agentdomain = AgentDomain(self.login_uri)
-        
-        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+        agent = Agent()
 
-        #gets seedcap, and an agent that can be placed in a region
-        self.agentdomain.login(credentials)
+        # establish agent credentials
+        agent.setCredentials(self.firstname, self.lastname, self.password)
 
-        # try and connect to a sim
+        # initialize an agent domain object
+        self.agentdomain = AgentDomain(self.login_uri)  
+        self.agentdomain.login(agent.credentials)
+ 
+        caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
+
+        # place the avatar on a region via the agent domain
         self.region = Region(self.region_uri)
-        place = IPlaceAvatar(self.agentdomain)
-
-        self.avatar = place(self.region)
+        self.region.details = self.agentdomain.place_avatar(self.region.region_uri)
         # </start>
 
         # this is the region we will test against
