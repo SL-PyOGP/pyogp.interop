@@ -1,5 +1,5 @@
 """
-@file test_cap_get_region_public_seed.py
+@file test_ogp_cap_get_region_public_seed.py
 @date 2008-09-16
 Contributors can be viewed at:
 http://svn.secondlife.com/svn/linden/projects/2008/pyogp/CONTRIBUTORS.txt 
@@ -24,7 +24,6 @@ import ConfigParser
 from pkg_resources import resource_stream
 
 # pygop
-from pyogp.lib.base.registration import init
 from pyogp.lib.base.regiondomain import Region
 
 # pyogp.interop
@@ -46,7 +45,6 @@ class GetRegionPublicSeed(unittest.TestCase):
     """ test posting to rez_avatar/derez for a simulator, acting as the region domain """
 
     def setUp(self):
-        init()
         
         config = ConfigParser.ConfigParser()
         config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -55,7 +53,8 @@ class GetRegionPublicSeed(unittest.TestCase):
         
         # set up a region
         self.region = Region(self.start_region_uri)   
-        
+        self.region.set_seed_cap_url(self.start_region_uri) 
+       
     def tearDown(self):
         pass
         # uncomment once this test can be used
@@ -81,6 +80,11 @@ class GetRegionPublicSeed(unittest.TestCase):
         self.assert_(result['capabilities']['rez_avatar/request'] != None)
         self.assert_(result['capabilities']['rez_avatar/request'] != {})
         self.assert_(result['capabilities']['rez_avatar/request'] != "")
+        self.assert_(caps.has_key('state/basic'))
+        self.assert_(result['capabilities']['state/basic'] != None)
+        self.assert_(result['capabilities']['state/basic'] != {})
+        self.assert_(result['capabilities']['state/basic'] != "")
+        # add test of the strings to validate they are urls
 
 def test_suite():
     from unittest import TestSuite, makeSuite

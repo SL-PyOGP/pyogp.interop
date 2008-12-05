@@ -1,5 +1,5 @@
 """
-@file test_cap_rez_avatar_rez.py
+@file test_ogp_cap_rez_avatar_rez.py
 @date 2008-09-16
 Contributors can be viewed at:
 http://svn.secondlife.com/svn/linden/projects/2008/pyogp/CONTRIBUTORS.txt 
@@ -24,12 +24,10 @@ import ConfigParser
 from pkg_resources import resource_stream
 
 # pygop
-from pyogp.lib.base.registration import init
-from pyogp.lib.base.caps import Capability
-from pyogp.lib.base.credentials import PlainPasswordCredential
+from pyogp.lib.base.agent import Agent
 from pyogp.lib.base.agentdomain import AgentDomain
+from pyogp.lib.base.caps import Capability
 from pyogp.lib.base.regiondomain import Region
-from pyogp.lib.base.interfaces import IPlaceAvatar
 
 # pyogp.interop
 from helpers import logout
@@ -45,7 +43,6 @@ class RezAvatarRezTests(unittest.TestCase):
     """ test posting to rez_avatar/rez for a simulator, acting as the region domain """
     
     def setUp(self):
-        init()
         
         self.config = ConfigParser.ConfigParser()
         self.config.readfp(resource_stream(__name__, 'testconfig.cfg'))
@@ -60,33 +57,34 @@ class RezAvatarRezTests(unittest.TestCase):
 
         # first establish an AD connection and get seed_cap for mtg
         # <start>
-        self.agentdomain = AgentDomain(self.login_uri)
-        
-        credentials = PlainPasswordCredential(self.firstname, self.lastname, self.password)
+        # initialize the agent
+        agent = Agent()
 
-        #gets seedcap, and an agent that can be placed in a region
-        self.agentdomain.login(credentials)
+        # establish agent credentials
+        agent.setCredentials(self.firstname, self.lastname, self.password)
+
+        # initialize an agent domain object
+        self.agentdomain = AgentDomain(self.login_uri)  
+        self.agentdomain.login(agent.credentials)
  
         caps = self.agentdomain.seed_cap.get(['rez_avatar/place'])
 
-        # try and connect to a sim
+        # place the avatar on a region via the agent domain
         self.region = Region(self.region_uri)
-        place = IPlaceAvatar(self.agentdomain)
-
-        self.avatar = place(self.region)
+        self.region.details = self.agentdomain.place_avatar(self.region.region_uri)
         # </start>
         
                 # Required parameters: { circuit_code: int, position: [x real ,y real, z real, ], secure_session_id: uuid , session_id: uuid , avatar_data: TBD }
         # Note the TBD on avatar data
         self.required_parameters = { 
-           'circuit_code' : self.avatar.region.details['circuit_code'],
+           'circuit_code' : self.region.details['circuit_code'],
            'position' : self.config.get('test_rez_avatar_rez', 'position'),
-           'secure_session_id' : self.avatar.region.details['secure_session_id'],
-           'session_id' : self.avatar.region.details['session_id']
+           'secure_session_id' : self.region.details['secure_session_id'],
+           'session_id' : self.region.details['session_id']
            }
            
         # we can't request this cap, but we can craft it ourselves        
-        self.rez_avatar_url  = self.region_uri + '/agent/' + self.avatar.region.details['agent_id'] + '/rez_avatar/rez'
+        self.rez_avatar_url  = self.region_uri + '/agent/' + self.region.details['agent_id'] + '/rez_avatar/rez'
                
         # Set state for the test
         #     The sim doesn't care about the agent domain per se for rez_avatar/rez
@@ -95,7 +93,7 @@ class RezAvatarRezTests(unittest.TestCase):
         
     def tearDown(self):
         
-        if self.agentdomain.loginStatus: # need a flag in the lib for when an agent has logged in 
+        if self.agentdomain.connectedStatus: # need a flag in the lib for when an agent has logged in 
             logout(self.agentdomain)
     
     def postToCap(self, arguments):
