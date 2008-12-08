@@ -86,10 +86,10 @@ class RezAvatarRequestTests(unittest.TestCase):
         caps = result['capabilities']     
         
         self.required_parameters = {
-            'agent_id' : self.avatar.region.details['agent_id'],
-            'circuit_code' : self.avatar.region.details['circuit_code'],
-            'secure_session_id' :self.avatar.region.details['secure_session_id'],
-            'session_id' : self.avatar.region.details['session_id'],
+            'agent_id' : self.region.details['agent_id'],
+            'circuit_code' : self.region.details['circuit_code'],
+            'secure_session_id' :self.region.details['secure_session_id'],
+            'session_id' : self.region.details['session_id'],
             'first_name' : self.firstname,
             'last_name' :self.lastname
         }

@@ -82,6 +82,8 @@ class RezAvatarPlaceTests(unittest.TestCase):
                         
     def postToCap(self, arguments):
 
+        result = self.capability.POST(arguments)
+        '''
         try:
             result = self.capability.POST(arguments)
         except Exception, e:
@@ -89,6 +91,12 @@ class RezAvatarPlaceTests(unittest.TestCase):
             result = str(e.args)
 
         return result
+        '''
+
+        # wow, text/plain being returned?!
+        #   File "/var/tmp/enus/pyogp/src/pyogp.lib.base/pyogp/lib/base/caps.py", line 115, in POST
+        #   raise exc.DeserializerNotFound(content_type)
+        #   DeserializerNotFound: deserialization for 'text/plain' not supported
 
     
     def check_response(self, result):

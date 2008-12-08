@@ -98,14 +98,20 @@ class RezAvatarRezTests(unittest.TestCase):
     
     def postToCap(self, arguments):
 
+        result = self.capability.POST(arguments)
+        '''
         try:
             result = self.capability.POST(arguments)
-        except Exception, e:
+        except ResourceError, e:
             #print 'Exception: ' + e.message + ' ' + str(e.args)
             result = str(e.args)
         return result
+        '''
 
-    
+        # this is currently returning the following
+        # ResourceError: Error using 'POST' on resource 'https://sim1.vaak.lindenlab.com:12043/cap/05917fe9-3347-72d2-cb30-b19c995af1c6/agent/dd1e79b2-ddfe-4080-8206-242ab63f4a19/rez_avatar/rez': Method Not Allowed (405)
+        # this is because the public seed has changed, need to re-identify what this url should look like
+
     def check_response(self, result):
         """ check for the eistence of the correct parameters in the cap response """
         
