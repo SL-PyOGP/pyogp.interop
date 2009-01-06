@@ -24,6 +24,8 @@ from pkg_resources import resource_stream
 import time
 import uuid
 
+from eventlet import api
+
 from pyogp.lib.base.agent import Agent
 from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
 from pyogp.lib.base.message.message import Message, Block
@@ -57,9 +59,11 @@ class OGPPresenceTest(unittest.TestCase):
         self.firstname = config.get(test_setup_config_name, 'firstname')
         self.lastname = config.get(test_setup_config_name, 'lastname')
         self.password = config.get(test_setup_config_name, 'password')
-        self.login_uri = config.get(test_setup_config_name, 'login_uri')        
-        self.start_region_uri = config.get('test_interop_regions', 'start_region_uri')        
-        
+        #self.login_uri = config.get(test_setup_config_name, 'login_uri')        
+        self.login_uri = "https://login.aditi.lindenlab.com/cgi-bin/login.cgi"
+        #self.start_region_uri = config.get('test_interop_regions', 'start_region_uri')        
+        self.start_region_uri = "Ahern"
+
         #don't need a port, not sure why we have it there yet
         self.messenger = UDPDispatcher()
         self.host = None
@@ -79,6 +83,10 @@ class OGPPresenceTest(unittest.TestCase):
         self.session_id = self.agent.region.details['session_id']
 
         self.agent.region.connect()
+
+        while True:
+            print 'Back in main'
+            api.sleep(0)
         '''
         #begin UDP communication
         self.host = Host((self.agent.region.details['sim_ip'],
@@ -105,6 +113,10 @@ class OGPPresenceTest(unittest.TestCase):
                       Block('UUIDNameBlock', ID=uuid.UUID(self.agent_id)
                             )
                       )
+        self.messenger.send_message(msg, self.host)
+
+        self.messenger.send_message(msg, self.host)
+
         self.messenger.send_message(msg, self.host)
 
         self.send_agent_update(self.agent_id, self.session_id)
@@ -197,6 +209,7 @@ class OGPPresenceTest(unittest.TestCase):
 
         self.messenger.send_message(msg, self.host)
 
+    
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
