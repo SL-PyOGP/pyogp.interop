@@ -24,6 +24,8 @@ from pkg_resources import resource_stream
 import time
 import uuid
 
+import sys
+sys.path.insert(0, '/Users/enus/svn/pyogp/trunk/src/lib')
 from eventlet import api
 
 from pyogp.lib.base.agent import Agent
@@ -36,8 +38,6 @@ from pyogp.lib.base.network.net import NetUDPClient
 
 import helpers
 
-import sys
-sys.path.insert(0, '/Users/enus/svn/pyogp/trunk/src/eventlet')
 
 class OGPPresenceTest(unittest.TestCase):
 
@@ -83,91 +83,12 @@ class OGPPresenceTest(unittest.TestCase):
         self.session_id = self.agent.region.details['session_id']
 
         self.agent.region.connect()
+        self.agent.region.get_region_capabilities()
 
         while True:
             print 'Back in main'
             api.sleep(0)
-        '''
-        #begin UDP communication
-        self.host = Host((self.agent.region.details['sim_ip'],
-                    self.agent.region.details['sim_port']))
 
-        #SENDS UseCircuitCode
-        msg = Message('UseCircuitCode',
-                      Block('CircuitCode', Code=self.agent.region.details['circuit_code'],
-                            SessionID=uuid.UUID(self.session_id),
-                            ID=uuid.UUID(self.agent_id)))
-        self.messenger.send_reliable(msg, self.host, 0)
-
-        time.sleep(1)
-
-        #SENDS CompleteAgentMovement
-        msg = Message('CompleteAgentMovement',
-                      Block('AgentData', AgentID=uuid.UUID(self.agent_id),
-                            SessionID=uuid.UUID(self.session_id),
-                            CircuitCode=self.agent.region.details['circuit_code']))
-        self.messenger.send_reliable(msg, self.host, 0)
-
-        #SENDS UUIDNameRequest
-        msg = Message('UUIDNameRequest',
-                      Block('UUIDNameBlock', ID=uuid.UUID(self.agent_id)
-                            )
-                      )
-        self.messenger.send_message(msg, self.host)
-
-        self.messenger.send_message(msg, self.host)
-
-        self.messenger.send_message(msg, self.host)
-
-        self.send_agent_update(self.agent_id, self.session_id)
-
-        #print "Entering loop"
-        last_ping = 0
-        start = time.time()
-        now = start
-        packets = {}
-        
-        # run for 45 seonds
-        while ((now - start) < 45):
-            msg_buf, msg_size = self.messenger.udp_client.receive_packet(self.messenger.socket)
-            packet = self.messenger.receive_check(self.messenger.udp_client.get_sender(),
-                                            msg_buf, msg_size)
-            if packet != None:
-                #print 'Received: ' + packet.name + ' from  ' + self.messenger.udp_client.sender.ip + ":" + \
-                                                  #str(self.messenger.udp_client.sender.port)
-
-                #MESSAGE HANDLERS
-                if packet.name == 'RegionHandshake':
-                    self.send_region_handshake_reply(self.agent_id, self.session_id)
-                elif packet.name == 'StartPingCheck':
-                    self.send_complete_ping_check(last_ping)
-                    last_ping += 1
-                   
-                if packet.name not in packets:
-                    packets[packet.name] = 1
-                else: 
-                    packets[packet.name] += 1                   
-                
-            else:
-                #print 'No message'
-                pass
-                
-            now = time.time()
-                
-            if self.messenger.has_unacked():
-                #print 'Acking'
-                self.messenger.process_acks()
-                self.send_agent_update(self.agent_id, self.session_id)
-
-        # let's test something to prove presence on the sim
-
-        assert self.agent.region.details['region_seed_capability'] != None or self.agent.region.details['region_seed_capability'] != {}, "Rez_avatar/place returned no seed cap"
-        assert len(packets) > 0
-        self.assertNotEqual(last_ping, 0)
-        self.assert_("CoarseLocationUpdate" in packets)
-        self.assert_("StartPingCheck" in packets) 
-        self.assert_("AgentDataUpdate" in packets) 
-        '''
     def tearDown(self):
         
         if self.agent.agentdomain.connectedStatus: # need a flag in the lib for when an agent has logged in         
@@ -178,38 +99,6 @@ class OGPPresenceTest(unittest.TestCase):
                       )
             self.messenger.send_message(msg, self.host)
 
-    def send_agent_update(self, agent_id, session_id):
-        msg = Message('AgentUpdate',
-                      Block('AgentData', AgentID=uuid.UUID(agent_id),
-                            SessionID=uuid.UUID(self.session_id),
-                            BodyRotation=(0.0,0.0,0.0,0.0),
-                            HeadRotation=(0.0,0.0,0.0,0.0),
-                            State=0x00,
-                            CameraCenter=(0.0,0.0,0.0),
-                            CameraAtAxis=(0.0,0.0,0.0),
-                            CameraLeftAxis=(0.0,0.0,0.0),
-                            CameraUpAxis=(0.0,0.0,0.0),
-                            Far=0,
-                            ControlFlags=0x00,
-                            Flags=0x00))
-
-        self.messenger.send_message(msg, self.host)
-
-    def send_region_handshake_reply(self, agent_id, session_id):
-        msg = Message('RegionHandshakeReply',
-                      [Block('AgentData', AgentID=uuid.UUID(agent_id),
-                            SessionID=uuid.UUID(self.session_id)),
-                       Block('RegionInfo', Flags=0x00)])
-
-        self.messenger.send_message(msg, self.host)
-    
-    def send_complete_ping_check(self, ping):
-        msg = Message('CompletePingCheck',
-                      Block('PingID', PingID=ping))
-
-        self.messenger.send_message(msg, self.host)
-
-    
 def test_suite():
     from unittest import TestSuite, makeSuite
     suite = TestSuite()
