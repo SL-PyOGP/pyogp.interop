@@ -84,7 +84,7 @@ class OGPPresenceTest(unittest.TestCase):
         self.session_id = self.agent.region.details['session_id']
 
         self.agent.region.connect()
-        self.agent.region.get_region_capabilities()
+        #self.agent.region.get_region_capabilities()
 
         watcher = self.agent.region.messenger.packet_handler.PacketAck_Received
         watcher.event += idunbeenseen
