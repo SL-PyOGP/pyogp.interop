@@ -33,6 +33,7 @@ from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
 from pyogp.lib.base.message.message import Message, Block
 from pyogp.lib.base.message.circuit import Host
 from pyogp.lib.base.message.types import MsgType
+#from pyogp.lib.base.message.packet_handler import *
 
 from pyogp.lib.base.network.net import NetUDPClient
 
@@ -85,6 +86,9 @@ class OGPPresenceTest(unittest.TestCase):
         self.agent.region.connect()
         self.agent.region.get_region_capabilities()
 
+        watcher = self.agent.region.messenger.packet_handler.PacketAck_Received
+        watcher.event += idunbeenseen
+
         while True:
             print 'Back in main'
             api.sleep(0)
@@ -98,6 +102,10 @@ class OGPPresenceTest(unittest.TestCase):
                             )
                       )
             self.messenger.send_message(msg, self.host)
+
+def idunbeenseen(packet):
+
+    print "FUCK YEAH, packet gotrdun " + packet.name
 
 def test_suite():
     from unittest import TestSuite, makeSuite
