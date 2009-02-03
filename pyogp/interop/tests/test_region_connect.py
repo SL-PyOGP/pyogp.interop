@@ -105,7 +105,7 @@ class OGPPresenceTest(unittest.TestCase):
 
 def idunbeenseen(packet):
 
-    print "FUCK YEAH, packet gotrdun " + packet.name
+    print "WOOT, packet callback gotrdun " + packet.name
 
 def test_suite():
     from unittest import TestSuite, makeSuite
