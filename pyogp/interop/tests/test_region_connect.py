@@ -86,7 +86,7 @@ class OGPPresenceTest(unittest.TestCase):
         self.agent.region.connect()
         #self.agent.region.get_region_capabilities()
 
-        watcher = self.agent.region.messenger.packet_handler.PacketAck_Received
+        watcher = self.agent.region.messenger.packet_handler._register_callback('PacketAck')
         watcher.event += idunbeenseen
 
         while True:
