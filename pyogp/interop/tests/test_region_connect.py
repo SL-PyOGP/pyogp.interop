@@ -66,8 +66,8 @@ class OGPPresenceTest(unittest.TestCase):
         self.start_region_uri = "Ahern"
 
         #don't need a port, not sure why we have it there yet
-        self.messenger = UDPDispatcher()
-        self.host = None
+        #self.messenger = UDPDispatcher()
+        #self.host = None
 
         self.agent = Agent()
 
@@ -86,11 +86,25 @@ class OGPPresenceTest(unittest.TestCase):
         self.agent.region.connect()
         #self.agent.region.get_region_capabilities()
 
-        watcher = self.agent.region.messenger.packet_handler._register_callback('PacketAck')
+        watcher = self.agent.region.messenger.packet_handler._register_callback('ChatFromSimulator')
         watcher.event += idunbeenseen
+        '''
+        from pyogp.lib.base.message.packets import *
+        import uuid
 
+        packet = ChatFromSimulatorPacket()
+        packet.ChatData['FromName'] = 'None'    # MVT_VARIABLE
+        packet.ChatData['SourceID'] = uuid.UUID(self.agent.region.details['agent_id'])    # MVT_LLUUID
+        packet.ChatData['OwnerID'] = uuid.UUID(self.agent.region.details['agent_id'])    # MVT_LLUUID
+        packet.ChatData['SourceType'] = 0    # MVT_U8
+        packet.ChatData['ChatType'] = 1    # MVT_U8
+        packet.ChatData['Audible'] = 1    # MVT_U8
+        packet.ChatData['Position'] = (0.0, 0.1, 0.0)    # MVT_LLVector3
+        packet.ChatData['Message'] = 'Hi, I am trying to talk'    # MVT_VARIABLE
+        #self.agent.region.messenger.send_message(packet(), self.agent.region.host)
+        '''
         while True:
-            print 'Back in main'
+            #print 'Back in main'
             api.sleep(0)
 
     def tearDown(self):
