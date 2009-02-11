@@ -61,9 +61,9 @@ class OGPPresenceTest(unittest.TestCase):
         self.lastname = config.get(test_setup_config_name, 'lastname')
         self.password = config.get(test_setup_config_name, 'password')
         #self.login_uri = config.get(test_setup_config_name, 'login_uri')        
-        self.login_uri = "https://login.aditi.lindenlab.com/cgi-bin/login.cgi"
+        self.login_uri = "https://login.nandi.lindenlab.com/cgi-bin/login.cgi"
         #self.start_region_uri = config.get('test_interop_regions', 'start_region_uri')        
-        self.start_region_uri = "Ahern"
+        self.start_region_uri = "uri:morris&128&128&128"
 
         #don't need a port, not sure why we have it there yet
         #self.messenger = UDPDispatcher()
@@ -86,8 +86,10 @@ class OGPPresenceTest(unittest.TestCase):
         self.agent.region.connect()
         #self.agent.region.get_region_capabilities()
 
-        watcher = self.agent.region.messenger.packet_handler._register_callback('ChatFromSimulator')
+        watcher = self.agent.region.messenger.packet_handler._register_callback('PacketAck')
+        watcher2 = self.agent.region.messenger.packet_handler._register_callback('PacketAck')
         watcher.event += idunbeenseen
+        watcher2.event += idunbeenseen2
         '''
         from pyogp.lib.base.message.packets import *
         import uuid
@@ -120,6 +122,10 @@ class OGPPresenceTest(unittest.TestCase):
 def idunbeenseen(packet):
 
     print "WOOT, packet callback gotrdun " + packet.name
+
+def idunbeenseen2(packet):
+
+    print "WOOT222222222, packet callback gotrdun " + packet.name
 
 def test_suite():
     from unittest import TestSuite, makeSuite
