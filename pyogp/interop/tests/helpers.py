@@ -31,7 +31,6 @@ config.readfp(resource_stream(__name__, 'testconfig.cfg'))
 
 debug = bool(int(config.get('testconfig', 'debug')))
 
-
 #setup logging
 
 if debug: 
@@ -49,9 +48,3 @@ if debug:
     logger = logging.getLogger('pyogp.interop.helpers')
 
     logger.debug('setting debug to True')
-
-def logout(me):
-    """ logout a something from somewhere """
-
-    # leyla passes word that sending rez_avatar/place an empty POST is a hack for logout
-    time.sleep(30)

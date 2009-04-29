@@ -25,8 +25,6 @@ import time
 import uuid
 
 import sys
-sys.path.insert(0, '/Users/enus/svn/pyogp/trunk/src/lib')
-from eventlet import api
 
 from pyogp.lib.base.agent import Agent
 from pyogp.lib.base.message.udpdispatcher import UDPDispatcher
